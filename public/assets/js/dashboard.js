@@ -3,8 +3,10 @@ class InventarioApp {
     this.productos = [];
     this.movimientos = [];
     this.usuarios = [];
+    this.clientes = [];
     this.usuarioActual = null;
     this.editingUserId = null;
+    this.editingClienteId = null;
 
     this.cargarDatos();
     this.inicializarUsuarioActual();
@@ -15,10 +17,12 @@ class InventarioApp {
     const productosGuardados = localStorage.getItem('productos');
     const movimientosGuardados = localStorage.getItem('movimientos');
     const usuariosGuardados = localStorage.getItem('usuarios');
+    const clientesGuardados = localStorage.getItem('clientes');
 
     this.productos = productosGuardados ? JSON.parse(productosGuardados) : [];
     this.movimientos = movimientosGuardados ? JSON.parse(movimientosGuardados) : [];
     this.usuarios = usuariosGuardados ? JSON.parse(usuariosGuardados) : this.crearUsuariosIniciales();
+    this.clientes = clientesGuardados ? JSON.parse(clientesGuardados) : this.crearClientesIniciales();
   }
 
   crearUsuariosIniciales() {
@@ -48,6 +52,23 @@ class InventarioApp {
     return usuarios;
   }
 
+  crearClientesIniciales() {
+    const clientes = [
+      {
+        id: '1',
+        nombre: 'Cliente General',
+        email: 'general@cliente.com',
+        telefono: '555-1000',
+        direccion: 'Dirección General',
+        notas: 'Cliente por defecto',
+        activo: true,
+        fechaRegistro: new Date().toISOString()
+      }
+    ];
+    this.guardarClientes(clientes);
+    return clientes;
+  }
+
   inicializarUsuarioActual() {
     const usuarioGuardado = localStorage.getItem('usuarioActual');
     if (usuarioGuardado) {
@@ -74,15 +95,24 @@ class InventarioApp {
     localStorage.setItem('usuarios', JSON.stringify(this.usuarios));
   }
 
+  guardarClientes(clientes) {
+    if (clientes) {
+      this.clientes = clientes;
+    }
+    localStorage.setItem('clientes', JSON.stringify(this.clientes));
+  }
+
   inicializar() {
     this.inicializarTema();
     this.inicializarNavegacion();
     this.inicializarSidebar();
     this.inicializarMenuUsuario();
     this.inicializarResumen();
+    this.inicializarInventario();
     this.inicializarEntrada();
     this.inicializarSalida();
     this.inicializarHistorial();
+    this.inicializarClientes();
     this.inicializarUsuarios();
     this.inicializarPerfil();
     this.mostrarNotificacion('Bienvenido al Sistema de Inventario', 'success');
@@ -110,9 +140,11 @@ class InventarioApp {
 
     const titles = {
       'resumen': 'Resumen',
+      'inventario': 'Inventario de Productos',
       'entrada': 'Entrada de Productos',
       'salida': 'Salida de Productos',
       'historial': 'Historial de Movimientos',
+      'clientes': 'Manejo de Clientes',
       'usuarios': 'Manejo de Usuarios',
       'perfil': 'Mi Perfil'
     };
@@ -140,8 +172,13 @@ class InventarioApp {
           this.renderizarResumen();
         }
 
+        if (sectionId === 'inventario') {
+          this.renderizarInventarioCompleto();
+        }
+
         if (sectionId === 'salida') {
           this.actualizarSelectProductos();
+          this.actualizarSelectClientes();
         }
 
         if (sectionId === 'perfil') {
@@ -286,7 +323,7 @@ class InventarioApp {
 
     this.renderizarStockBajo();
     this.renderizarUltimosMovimientos();
-    this.renderizarCategorias();
+    this.renderizarActividadSemanal();
   }
 
   renderizarStockBajo() {
@@ -340,175 +377,526 @@ class InventarioApp {
         minute: '2-digit'
       });
 
+      const productosTexto = movimiento.productos ? `${movimiento.productos.length} productos` : movimiento.productoNombre;
+
       return `
         <tr>
           <td><span class="status-badge ${movimiento.tipo}">${movimiento.tipo === 'entrada' ? 'Entrada' : 'Salida'}</span></td>
-          <td>${movimiento.productoNombre}</td>
-          <td>${movimiento.cantidad}</td>
+          <td>${productosTexto}</td>
+          <td>${movimiento.cantidadTotal || movimiento.cantidad}</td>
           <td>${fechaFormateada}</td>
         </tr>
       `;
     }).join('');
   }
 
-  renderizarCategorias() {
-    const container = document.getElementById('categorias-container');
-    if (!container) return;
+  renderizarActividadSemanal() {
+    const entradasSemana = document.getElementById('entradas-semana');
+    const salidasSemana = document.getElementById('salidas-semana');
 
-    const categorias = {};
-    this.productos.forEach(p => {
-      if (!categorias[p.categoria]) {
-        categorias[p.categoria] = { count: 0, valor: 0 };
-      }
-      categorias[p.categoria].count++;
-      categorias[p.categoria].valor += p.stock * p.precio;
-    });
+    if (entradasSemana) {
+      const entradas = this.movimientos.filter(m => m.tipo === 'entrada').length;
+      entradasSemana.textContent = entradas;
+    }
 
-    const categoriasArray = Object.entries(categorias).map(([nombre, data]) => ({
-      nombre,
-      count: data.count,
-      valor: data.valor
-    }));
+    if (salidasSemana) {
+      const salidas = this.movimientos.filter(m => m.tipo === 'salida').length;
+      salidasSemana.textContent = salidas;
+    }
+  }
 
-    if (categoriasArray.length === 0) {
-      container.innerHTML = '<p style="text-align: center; padding: 40px; color: var(--text-secondary);">No hay categorías registradas</p>';
+  inicializarInventario() {
+    this.renderizarInventarioCompleto();
+    this.inicializarBusquedaInventario();
+    this.inicializarFiltrosInventario();
+  }
+
+  renderizarInventarioCompleto(filtro = '', categoria = 'todos') {
+    const tbody = document.getElementById('inventario-full-table');
+    if (!tbody) return;
+
+    let productosFiltrados = this.productos;
+
+    if (categoria !== 'todos') {
+      productosFiltrados = productosFiltrados.filter(p => p.categoria === categoria);
+    }
+
+    if (filtro) {
+      productosFiltrados = productosFiltrados.filter(p =>
+        p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+        p.codigo.toLowerCase().includes(filtro.toLowerCase()) ||
+        p.categoria.toLowerCase().includes(filtro.toLowerCase()) ||
+        p.proveedor.toLowerCase().includes(filtro.toLowerCase())
+      );
+    }
+
+    if (productosFiltrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay productos en el inventario</td></tr>';
       return;
     }
 
-    const maxCount = Math.max(...categoriasArray.map(c => c.count));
-
-    container.innerHTML = categoriasArray.map(cat => {
-      const percentage = (cat.count / maxCount) * 100;
-
+    tbody.innerHTML = productosFiltrados.map(producto => {
+      const valorTotal = (producto.stock * producto.precio).toFixed(2);
       return `
-        <div class="categoria-item">
-          <div class="categoria-header">
-            <span class="categoria-nombre">${cat.nombre}</span>
-            <span class="categoria-valor">${cat.count} productos - $${cat.valor.toFixed(2)}</span>
-          </div>
-          <div class="categoria-bar">
-            <div class="categoria-fill" style="width: ${percentage}%"></div>
-          </div>
-        </div>
+        <tr>
+          <td>${producto.codigo}</td>
+          <td>${producto.nombre}</td>
+          <td>${producto.categoria}</td>
+          <td>${producto.stock}</td>
+          <td>$${producto.precio.toFixed(2)}</td>
+          <td>${producto.proveedor}</td>
+          <td>$${valorTotal}</td>
+          <td>
+            <button class="action-btn" onclick="app.verDetalleProducto('${producto.id}')">Ver Detalle</button>
+          </td>
+        </tr>
       `;
     }).join('');
   }
 
-  inicializarEntrada() {
-    const form = document.getElementById('entrada-form');
+  inicializarBusquedaInventario() {
+    const searchInput = document.getElementById('search-inventario-full');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        const activeFilter = document.querySelector('[data-filter-cat].filter-btn.active');
+        const categoria = activeFilter ? activeFilter.getAttribute('data-filter-cat') : 'todos';
+        this.renderizarInventarioCompleto(e.target.value, categoria);
+      });
+    }
+  }
 
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.registrarEntrada();
+  inicializarFiltrosInventario() {
+    const filterButtons = document.querySelectorAll('[data-filter-cat].filter-btn');
+
+    filterButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        const target = e.target;
+        const categoria = target.getAttribute('data-filter-cat');
+
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        target.classList.add('active');
+
+        const searchInput = document.getElementById('search-inventario-full');
+        this.renderizarInventarioCompleto(searchInput ? searchInput.value : '', categoria || 'todos');
+      });
+    });
+  }
+
+  verDetalleProducto(productoId) {
+    const producto = this.productos.find(p => p.id === productoId);
+    if (!producto) return;
+
+    const modal = document.getElementById('producto-detalle-modal');
+    const content = document.getElementById('producto-detalle-content');
+    const titulo = document.getElementById('producto-detalle-titulo');
+
+    if (titulo) {
+      titulo.textContent = `Detalles de ${producto.nombre}`;
+    }
+
+    const movimientosProducto = this.movimientos.filter(m => {
+      if (m.productos) {
+        return m.productos.some(p => p.id === productoId);
+      }
+      return m.productoId === productoId;
+    });
+
+    const valorTotal = (producto.stock * producto.precio).toFixed(2);
+
+    if (content) {
+      content.innerHTML = `
+        <div class="producto-detalle-grid">
+          <div class="detalle-item">
+            <span class="detalle-label">Código</span>
+            <span class="detalle-value">${producto.codigo}</span>
+          </div>
+          <div class="detalle-item">
+            <span class="detalle-label">Nombre</span>
+            <span class="detalle-value">${producto.nombre}</span>
+          </div>
+          <div class="detalle-item">
+            <span class="detalle-label">Categoría</span>
+            <span class="detalle-value">${producto.categoria}</span>
+          </div>
+          <div class="detalle-item">
+            <span class="detalle-label">Stock Actual</span>
+            <span class="detalle-value">${producto.stock}</span>
+          </div>
+          <div class="detalle-item">
+            <span class="detalle-label">Precio Unitario</span>
+            <span class="detalle-value">$${producto.precio.toFixed(2)}</span>
+          </div>
+          <div class="detalle-item">
+            <span class="detalle-label">Valor Total</span>
+            <span class="detalle-value">$${valorTotal}</span>
+          </div>
+          <div class="detalle-item">
+            <span class="detalle-label">Proveedor</span>
+            <span class="detalle-value">${producto.proveedor}</span>
+          </div>
+        </div>
+
+        <div class="movimientos-producto">
+          <h4>Historial de Movimientos (${movimientosProducto.length})</h4>
+          ${movimientosProducto.length === 0 ? '<p style="color: var(--text-secondary);">No hay movimientos registrados para este producto</p>' :
+            movimientosProducto.reverse().slice(0, 10).map(mov => {
+              const fecha = new Date(mov.fecha);
+              const fechaFormateada = fecha.toLocaleString('es-ES');
+              let cantidad = mov.cantidad;
+              if (mov.productos) {
+                const prodEnMov = mov.productos.find(p => p.id === productoId);
+                if (prodEnMov) cantidad = prodEnMov.cantidad;
+              }
+              return `
+                <div class="movimiento-item">
+                  <div class="movimiento-info">
+                    <span class="status-badge ${mov.tipo}">${mov.tipo === 'entrada' ? 'Entrada' : 'Salida'}</span>
+                    <span>${cantidad} unidades</span>
+                    <span class="movimiento-fecha">${fechaFormateada}</span>
+                  </div>
+                  <span>${mov.usuario}</span>
+                </div>
+              `;
+            }).join('')
+          }
+        </div>
+      `;
+    }
+
+    if (modal) {
+      modal.classList.add('show');
+    }
+
+    const closeBtn = document.getElementById('producto-detalle-close');
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        if (modal) modal.classList.remove('show');
+      };
+    }
+
+    if (modal) {
+      modal.onclick = (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('show');
+        }
+      };
+    }
+  }
+
+  inicializarEntrada() {
+    const addBtn = document.getElementById('add-producto-entrada');
+    const registrarBtn = document.getElementById('registrar-entrada');
+
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        this.agregarProductoEntrada();
       });
     }
 
-    this.renderizarInventario();
-    this.inicializarBusquedaInventario();
+    if (registrarBtn) {
+      registrarBtn.addEventListener('click', () => {
+        this.registrarEntrada();
+      });
+    }
+  }
+
+  agregarProductoEntrada() {
+    const list = document.getElementById('productos-entrada-list');
+    if (!list) return;
+
+    const currentItems = list.querySelectorAll('.producto-entrada-item').length;
+    const newItem = document.createElement('div');
+    newItem.className = 'producto-entrada-item';
+    newItem.innerHTML = `
+      <div class="item-header">
+        <h4>Producto ${currentItems + 1}</h4>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre del Producto</label>
+          <input type="text" class="form-input producto-nombre" required />
+        </div>
+        <div class="form-group">
+          <label>Código/SKU</label>
+          <input type="text" class="form-input producto-codigo" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cantidad</label>
+          <input type="number" class="form-input producto-cantidad" min="1" required />
+        </div>
+        <div class="form-group">
+          <label>Precio Unitario</label>
+          <input type="number" class="form-input producto-precio" step="0.01" min="0" required />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Categoría</label>
+          <select class="form-input producto-categoria" required>
+            <option value="">Seleccionar categoría</option>
+            <option value="Electrónica">Electrónica</option>
+            <option value="Ropa">Ropa</option>
+            <option value="Alimentos">Alimentos</option>
+            <option value="Herramientas">Herramientas</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Proveedor</label>
+          <input type="text" class="form-input producto-proveedor" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notas (opcional)</label>
+        <textarea class="form-input producto-notas" rows="2"></textarea>
+      </div>
+      <button type="button" class="btn btn-secondary btn-remove-producto">Eliminar Producto</button>
+    `;
+
+    list.appendChild(newItem);
+
+    const removeBtn = newItem.querySelector('.btn-remove-producto');
+    if (removeBtn) {
+      removeBtn.style.display = 'inline-block';
+      removeBtn.addEventListener('click', () => {
+        newItem.remove();
+        this.actualizarNumeracionProductos('entrada');
+      });
+    }
+
+    this.mostrarBotonesEliminarEntrada();
+  }
+
+  mostrarBotonesEliminarEntrada() {
+    const list = document.getElementById('productos-entrada-list');
+    if (!list) return;
+
+    const items = list.querySelectorAll('.producto-entrada-item');
+    items.forEach((item, index) => {
+      const removeBtn = item.querySelector('.btn-remove-producto');
+      if (removeBtn) {
+        removeBtn.style.display = items.length > 1 ? 'inline-block' : 'none';
+      }
+    });
+  }
+
+  actualizarNumeracionProductos(tipo) {
+    const listId = tipo === 'entrada' ? 'productos-entrada-list' : 'productos-salida-list';
+    const list = document.getElementById(listId);
+    if (!list) return;
+
+    const items = list.querySelectorAll(tipo === 'entrada' ? '.producto-entrada-item' : '.producto-salida-item');
+    items.forEach((item, index) => {
+      const header = item.querySelector('.item-header h4');
+      if (header) {
+        header.textContent = `Producto ${index + 1}`;
+      }
+    });
   }
 
   registrarEntrada() {
-    const codigo = document.getElementById('entrada-codigo').value;
-    const nombre = document.getElementById('entrada-nombre').value;
-    const cantidad = parseInt(document.getElementById('entrada-cantidad').value);
-    const precio = parseFloat(document.getElementById('entrada-precio').value);
-    const categoria = document.getElementById('entrada-categoria').value;
-    const proveedor = document.getElementById('entrada-proveedor').value;
-    const notas = document.getElementById('entrada-notas').value;
+    const list = document.getElementById('productos-entrada-list');
+    if (!list) return;
 
-    const productoExistente = this.productos.find(p => p.codigo === codigo);
+    const items = list.querySelectorAll('.producto-entrada-item');
+    const productos = [];
 
-    if (productoExistente) {
-      productoExistente.stock += cantidad;
-      productoExistente.precio = precio;
-    } else {
-      const nuevoProducto = {
-        id: Date.now().toString(),
-        codigo,
-        nombre,
-        categoria,
-        stock: cantidad,
-        precio,
-        proveedor
-      };
-      this.productos.push(nuevoProducto);
+    for (let item of items) {
+      const codigo = item.querySelector('.producto-codigo').value.trim();
+      const nombre = item.querySelector('.producto-nombre').value.trim();
+      const cantidad = parseInt(item.querySelector('.producto-cantidad').value);
+      const precio = parseFloat(item.querySelector('.producto-precio').value);
+      const categoria = item.querySelector('.producto-categoria').value;
+      const proveedor = item.querySelector('.producto-proveedor').value.trim();
+      const notas = item.querySelector('.producto-notas').value.trim();
+
+      if (!codigo || !nombre || !cantidad || !precio || !categoria || !proveedor) {
+        this.mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+        return;
+      }
+
+      productos.push({ codigo, nombre, cantidad, precio, categoria, proveedor, notas });
     }
+
+    let cantidadTotal = 0;
+
+    productos.forEach(prod => {
+      const productoExistente = this.productos.find(p => p.codigo === prod.codigo);
+
+      if (productoExistente) {
+        productoExistente.stock += prod.cantidad;
+        productoExistente.precio = prod.precio;
+        prod.id = productoExistente.id;
+      } else {
+        const nuevoProducto = {
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          codigo: prod.codigo,
+          nombre: prod.nombre,
+          categoria: prod.categoria,
+          stock: prod.cantidad,
+          precio: prod.precio,
+          proveedor: prod.proveedor
+        };
+        this.productos.push(nuevoProducto);
+        prod.id = nuevoProducto.id;
+      }
+
+      cantidadTotal += prod.cantidad;
+    });
 
     const movimiento = {
       id: Date.now().toString(),
       tipo: 'entrada',
-      productoId: productoExistente ? productoExistente.id : this.productos[this.productos.length - 1].id,
-      productoNombre: nombre,
-      cantidad,
+      productos: productos,
+      cantidadTotal: cantidadTotal,
       fecha: new Date().toISOString(),
       usuario: this.usuarioActual ? this.usuarioActual.nombre : 'Usuario',
-      detalles: `Entrada de ${cantidad} unidades`,
-      precio,
-      proveedor,
-      notas
+      proveedor: productos[0].proveedor,
+      detalles: `Entrada de ${productos.length} producto(s) - Total: ${cantidadTotal} unidades`
     };
 
     this.movimientos.push(movimiento);
     this.guardarProductos();
     this.guardarMovimientos();
-    this.renderizarInventario();
-    this.mostrarNotificacion('Entrada registrada exitosamente', 'success');
+    this.renderizarInventarioCompleto();
+    this.mostrarNotificacion(`Entrada registrada exitosamente: ${productos.length} productos`, 'success');
 
-    const entradaForm = document.getElementById('entrada-form');
-    if (entradaForm) {
-      entradaForm.reset();
-    }
-  }
-
-  renderizarInventario(filtro = '') {
-    const tbody = document.getElementById('inventario-table');
-    if (!tbody) return;
-
-    const productosFiltrados = filtro
-      ? this.productos.filter(p =>
-          p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-          p.codigo.toLowerCase().includes(filtro.toLowerCase()) ||
-          p.categoria.toLowerCase().includes(filtro.toLowerCase())
-        )
-      : this.productos;
-
-    tbody.innerHTML = productosFiltrados.map(producto => `
-      <tr>
-        <td>${producto.codigo}</td>
-        <td>${producto.nombre}</td>
-        <td>${producto.categoria}</td>
-        <td>${producto.stock}</td>
-        <td>$${producto.precio.toFixed(2)}</td>
-      </tr>
-    `).join('');
-  }
-
-  inicializarBusquedaInventario() {
-    const searchInput = document.getElementById('search-inventario');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        this.renderizarInventario(e.target.value);
-      });
-    }
+    list.innerHTML = `
+      <div class="producto-entrada-item">
+        <div class="item-header">
+          <h4>Producto 1</h4>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre del Producto</label>
+            <input type="text" class="form-input producto-nombre" required />
+          </div>
+          <div class="form-group">
+            <label>Código/SKU</label>
+            <input type="text" class="form-input producto-codigo" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cantidad</label>
+            <input type="number" class="form-input producto-cantidad" min="1" required />
+          </div>
+          <div class="form-group">
+            <label>Precio Unitario</label>
+            <input type="number" class="form-input producto-precio" step="0.01" min="0" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Categoría</label>
+            <select class="form-input producto-categoria" required>
+              <option value="">Seleccionar categoría</option>
+              <option value="Electrónica">Electrónica</option>
+              <option value="Ropa">Ropa</option>
+              <option value="Alimentos">Alimentos</option>
+              <option value="Herramientas">Herramientas</option>
+              <option value="Otros">Otros</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Proveedor</label>
+            <input type="text" class="form-input producto-proveedor" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Notas (opcional)</label>
+          <textarea class="form-input producto-notas" rows="2"></textarea>
+        </div>
+        <button type="button" class="btn btn-secondary btn-remove-producto" style="display: none;">Eliminar Producto</button>
+      </div>
+    `;
   }
 
   inicializarSalida() {
-    const form = document.getElementById('salida-form');
-    const selectProducto = document.getElementById('salida-producto');
+    const addBtn = document.getElementById('add-producto-salida');
+    const registrarBtn = document.getElementById('registrar-salida');
 
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        this.agregarProductoSalida();
+      });
+    }
+
+    if (registrarBtn) {
+      registrarBtn.addEventListener('click', () => {
         this.registrarSalida();
       });
     }
 
+    this.actualizarSelectProductos();
+    this.actualizarSelectClientes();
+    this.inicializarCambiosProductoSalida();
+  }
+
+  agregarProductoSalida() {
+    const list = document.getElementById('productos-salida-list');
+    if (!list) return;
+
+    const currentItems = list.querySelectorAll('.producto-salida-item').length;
+    const newItem = document.createElement('div');
+    newItem.className = 'producto-salida-item';
+    newItem.innerHTML = `
+      <div class="item-header">
+        <h4>Producto ${currentItems + 1}</h4>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Producto</label>
+          <select class="form-input salida-producto" required>
+            <option value="">Seleccionar producto</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Stock Disponible</label>
+          <input type="text" class="form-input salida-stock" readonly />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cantidad a Retirar</label>
+          <input type="number" class="form-input salida-cantidad" min="1" required />
+        </div>
+        <div class="form-group">
+          <label>Motivo</label>
+          <select class="form-input salida-motivo" required>
+            <option value="">Seleccionar motivo</option>
+            <option value="Venta">Venta</option>
+            <option value="Devolución">Devolución</option>
+            <option value="Merma">Merma</option>
+            <option value="Uso interno">Uso interno</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notas (opcional)</label>
+        <textarea class="form-input salida-notas" rows="2"></textarea>
+      </div>
+      <button type="button" class="btn btn-secondary btn-remove-salida">Eliminar Producto</button>
+    `;
+
+    list.appendChild(newItem);
+
+    const selectProducto = newItem.querySelector('.salida-producto');
+    const productosDisponibles = this.productos.filter(p => p.stock > 0);
+
     if (selectProducto) {
+      selectProducto.innerHTML = '<option value="">Seleccionar producto</option>' +
+        productosDisponibles.map(p =>
+          `<option value="${p.id}">${p.nombre} (${p.codigo}) - Stock: ${p.stock}</option>`
+        ).join('');
+
       selectProducto.addEventListener('change', (e) => {
         const productoId = e.target.value;
         const producto = this.productos.find(p => p.id === productoId);
-        const stockInput = document.getElementById('salida-stock');
+        const stockInput = newItem.querySelector('.salida-stock');
 
         if (producto && stockInput) {
           stockInput.value = producto.stock.toString();
@@ -518,67 +906,208 @@ class InventarioApp {
       });
     }
 
-    this.actualizarSelectProductos();
+    const removeBtn = newItem.querySelector('.btn-remove-salida');
+    if (removeBtn) {
+      removeBtn.style.display = 'inline-block';
+      removeBtn.addEventListener('click', () => {
+        newItem.remove();
+        this.actualizarNumeracionProductos('salida');
+      });
+    }
+
+    this.mostrarBotonesEliminarSalida();
+  }
+
+  mostrarBotonesEliminarSalida() {
+    const list = document.getElementById('productos-salida-list');
+    if (!list) return;
+
+    const items = list.querySelectorAll('.producto-salida-item');
+    items.forEach((item, index) => {
+      const removeBtn = item.querySelector('.btn-remove-salida');
+      if (removeBtn) {
+        removeBtn.style.display = items.length > 1 ? 'inline-block' : 'none';
+      }
+    });
+  }
+
+  inicializarCambiosProductoSalida() {
+    document.addEventListener('change', (e) => {
+      if (e.target.classList.contains('salida-producto')) {
+        const item = e.target.closest('.producto-salida-item');
+        if (!item) return;
+
+        const productoId = e.target.value;
+        const producto = this.productos.find(p => p.id === productoId);
+        const stockInput = item.querySelector('.salida-stock');
+
+        if (producto && stockInput) {
+          stockInput.value = producto.stock.toString();
+        } else if (stockInput) {
+          stockInput.value = '';
+        }
+      }
+    });
   }
 
   actualizarSelectProductos() {
-    const select = document.getElementById('salida-producto');
-    if (!select) return;
-
+    const selects = document.querySelectorAll('.salida-producto');
     const productosDisponibles = this.productos.filter(p => p.stock > 0);
 
-    select.innerHTML = '<option value="">Seleccionar producto</option>' +
-      productosDisponibles.map(p =>
-        `<option value="${p.id}">${p.nombre} (${p.codigo}) - Stock: ${p.stock}</option>`
+    selects.forEach(select => {
+      const currentValue = select.value;
+      select.innerHTML = '<option value="">Seleccionar producto</option>' +
+        productosDisponibles.map(p =>
+          `<option value="${p.id}">${p.nombre} (${p.codigo}) - Stock: ${p.stock}</option>`
+        ).join('');
+
+      if (currentValue) {
+        select.value = currentValue;
+      }
+    });
+  }
+
+  actualizarSelectClientes() {
+    const select = document.getElementById('salida-cliente-select');
+    if (!select) return;
+
+    const clientesActivos = this.clientes.filter(c => c.activo);
+
+    select.innerHTML = '<option value="">Seleccionar cliente</option>' +
+      clientesActivos.map(c =>
+        `<option value="${c.id}">${c.nombre}</option>`
       ).join('');
   }
 
   registrarSalida() {
-    const productoId = document.getElementById('salida-producto').value;
-    const cantidad = parseInt(document.getElementById('salida-cantidad').value);
-    const motivo = document.getElementById('salida-motivo').value;
-    const destino = document.getElementById('salida-destino').value;
-    const notas = document.getElementById('salida-notas').value;
+    const list = document.getElementById('productos-salida-list');
+    const clienteSelect = document.getElementById('salida-cliente-select');
 
-    const producto = this.productos.find(p => p.id === productoId);
+    if (!list || !clienteSelect) return;
 
-    if (!producto) {
-      this.mostrarNotificacion('Producto no encontrado', 'error');
+    const clienteId = clienteSelect.value;
+    if (!clienteId) {
+      this.mostrarNotificacion('Por favor seleccione un cliente', 'error');
       return;
     }
 
-    if (cantidad > producto.stock) {
-      this.mostrarNotificacion('Stock insuficiente', 'error');
+    const cliente = this.clientes.find(c => c.id === clienteId);
+    if (!cliente) {
+      this.mostrarNotificacion('Cliente no encontrado', 'error');
       return;
     }
 
-    producto.stock -= cantidad;
+    const items = list.querySelectorAll('.producto-salida-item');
+    const productos = [];
+
+    for (let item of items) {
+      const productoId = item.querySelector('.salida-producto').value;
+      const cantidad = parseInt(item.querySelector('.salida-cantidad').value);
+      const motivo = item.querySelector('.salida-motivo').value;
+      const notas = item.querySelector('.salida-notas').value.trim();
+
+      if (!productoId || !cantidad || !motivo) {
+        this.mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+        return;
+      }
+
+      const producto = this.productos.find(p => p.id === productoId);
+      if (!producto) {
+        this.mostrarNotificacion('Producto no encontrado', 'error');
+        return;
+      }
+
+      if (cantidad > producto.stock) {
+        this.mostrarNotificacion(`Stock insuficiente para ${producto.nombre}`, 'error');
+        return;
+      }
+
+      productos.push({
+        id: producto.id,
+        nombre: producto.nombre,
+        codigo: producto.codigo,
+        cantidad,
+        motivo,
+        notas
+      });
+    }
+
+    let cantidadTotal = 0;
+
+    productos.forEach(prod => {
+      const producto = this.productos.find(p => p.id === prod.id);
+      if (producto) {
+        producto.stock -= prod.cantidad;
+        cantidadTotal += prod.cantidad;
+      }
+    });
 
     const movimiento = {
       id: Date.now().toString(),
       tipo: 'salida',
-      productoId: producto.id,
-      productoNombre: producto.nombre,
-      cantidad,
+      productos: productos,
+      cantidadTotal: cantidadTotal,
       fecha: new Date().toISOString(),
       usuario: this.usuarioActual ? this.usuarioActual.nombre : 'Usuario',
-      detalles: `Salida de ${cantidad} unidades - ${motivo}`,
-      motivo,
-      destino,
-      notas
+      cliente: cliente.nombre,
+      clienteId: cliente.id,
+      detalles: `Salida de ${productos.length} producto(s) - Total: ${cantidadTotal} unidades - Cliente: ${cliente.nombre}`
     };
 
     this.movimientos.push(movimiento);
     this.guardarProductos();
     this.guardarMovimientos();
     this.actualizarSelectProductos();
-    this.renderizarInventario();
-    this.mostrarNotificacion('Salida registrada exitosamente', 'success');
+    this.renderizarInventarioCompleto();
+    this.mostrarNotificacion(`Salida registrada exitosamente: ${productos.length} productos`, 'success');
 
-    const salidaForm = document.getElementById('salida-form');
-    if (salidaForm) {
-      salidaForm.reset();
+    list.innerHTML = `
+      <div class="producto-salida-item">
+        <div class="item-header">
+          <h4>Producto 1</h4>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Producto</label>
+            <select class="form-input salida-producto" required>
+              <option value="">Seleccionar producto</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Stock Disponible</label>
+            <input type="text" class="form-input salida-stock" readonly />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cantidad a Retirar</label>
+            <input type="number" class="form-input salida-cantidad" min="1" required />
+          </div>
+          <div class="form-group">
+            <label>Motivo</label>
+            <select class="form-input salida-motivo" required>
+              <option value="">Seleccionar motivo</option>
+              <option value="Venta">Venta</option>
+              <option value="Devolución">Devolución</option>
+              <option value="Merma">Merma</option>
+              <option value="Uso interno">Uso interno</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Notas (opcional)</label>
+          <textarea class="form-input salida-notas" rows="2"></textarea>
+        </div>
+        <button type="button" class="btn btn-secondary btn-remove-salida" style="display: none;">Eliminar Producto</button>
+      </div>
+    `;
+
+    if (clienteSelect) {
+      clienteSelect.value = '';
     }
+
+    this.actualizarSelectProductos();
   }
 
   inicializarHistorial() {
@@ -598,24 +1127,40 @@ class InventarioApp {
     }
 
     if (filtroBusqueda) {
-      movimientosFiltrados = movimientosFiltrados.filter(m =>
-        m.productoNombre.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
-        m.usuario.toLowerCase().includes(filtroBusqueda.toLowerCase()) ||
-        m.detalles.toLowerCase().includes(filtroBusqueda.toLowerCase())
-      );
+      movimientosFiltrados = movimientosFiltrados.filter(m => {
+        const searchLower = filtroBusqueda.toLowerCase();
+        return m.usuario.toLowerCase().includes(searchLower) ||
+               m.detalles.toLowerCase().includes(searchLower) ||
+               (m.cliente && m.cliente.toLowerCase().includes(searchLower)) ||
+               (m.proveedor && m.proveedor.toLowerCase().includes(searchLower)) ||
+               (m.productoNombre && m.productoNombre.toLowerCase().includes(searchLower));
+      });
+    }
+
+    if (movimientosFiltrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay movimientos registrados</td></tr>';
+      return;
     }
 
     tbody.innerHTML = movimientosFiltrados.map(movimiento => {
       const fecha = new Date(movimiento.fecha);
       const fechaFormateada = fecha.toLocaleString('es-ES');
 
+      const productosTexto = movimiento.productos ?
+        `${movimiento.productos.length} producto(s)` :
+        movimiento.productoNombre || 'N/A';
+
+      const clienteProveedor = movimiento.tipo === 'entrada' ?
+        (movimiento.proveedor || 'N/A') :
+        (movimiento.cliente || 'N/A');
+
       return `
         <tr>
           <td>${fechaFormateada}</td>
           <td><span class="status-badge ${movimiento.tipo}">${movimiento.tipo === 'entrada' ? 'Entrada' : 'Salida'}</span></td>
-          <td>${movimiento.productoNombre}</td>
-          <td>${movimiento.cantidad}</td>
+          <td>${productosTexto}</td>
           <td>${movimiento.usuario}</td>
+          <td>${clienteProveedor}</td>
           <td>${movimiento.detalles}</td>
         </tr>
       `;
@@ -623,7 +1168,7 @@ class InventarioApp {
   }
 
   inicializarFiltrosHistorial() {
-    const filterButtons = document.querySelectorAll('.filter-btn');
+    const filterButtons = document.querySelectorAll('[data-filter].filter-btn');
 
     filterButtons.forEach(button => {
       button.addEventListener('click', (e) => {
@@ -643,10 +1188,185 @@ class InventarioApp {
     const searchInput = document.getElementById('search-historial');
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
-        const activeFilter = document.querySelector('.filter-btn.active');
+        const activeFilter = document.querySelector('[data-filter].filter-btn.active');
         const filter = activeFilter ? activeFilter.getAttribute('data-filter') : 'todos';
         this.renderizarHistorial(filter || 'todos', e.target.value);
       });
+    }
+  }
+
+  inicializarClientes() {
+    this.renderizarClientes();
+    this.inicializarBusquedaClientes();
+    this.inicializarModalCliente();
+  }
+
+  renderizarClientes(filtro = '') {
+    const tbody = document.getElementById('clientes-table');
+    if (!tbody) return;
+
+    const clientesFiltrados = filtro
+      ? this.clientes.filter(c =>
+          c.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+          c.email.toLowerCase().includes(filtro.toLowerCase()) ||
+          c.telefono.toLowerCase().includes(filtro.toLowerCase())
+        )
+      : this.clientes;
+
+    if (clientesFiltrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay clientes registrados</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = clientesFiltrados.map(cliente => `
+      <tr>
+        <td>#${cliente.id}</td>
+        <td>${cliente.nombre}</td>
+        <td>${cliente.email}</td>
+        <td>${cliente.telefono}</td>
+        <td>${cliente.direccion}</td>
+        <td><span class="status-badge ${cliente.activo ? 'activo' : 'inactivo'}">${cliente.activo ? 'Activo' : 'Inactivo'}</span></td>
+        <td>
+          <button class="action-btn" onclick="app.editarCliente('${cliente.id}')">Editar</button>
+          <button class="action-btn delete" onclick="app.eliminarCliente('${cliente.id}')">Eliminar</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  inicializarBusquedaClientes() {
+    const searchInput = document.getElementById('search-clientes');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.renderizarClientes(e.target.value);
+      });
+    }
+  }
+
+  inicializarModalCliente() {
+    const addClienteBtn = document.getElementById('add-cliente-btn');
+    const modal = document.getElementById('cliente-modal');
+    const modalClose = document.getElementById('cliente-modal-close');
+    const modalCancel = document.getElementById('cliente-modal-cancel');
+    const clienteForm = document.getElementById('cliente-form');
+
+    if (addClienteBtn) {
+      addClienteBtn.addEventListener('click', () => {
+        this.editingClienteId = null;
+        this.limpiarFormularioCliente();
+        const modalTitle = document.getElementById('cliente-modal-title');
+        if (modalTitle) modalTitle.textContent = 'Añadir Cliente';
+        if (modal) modal.classList.add('show');
+      });
+    }
+
+    if (modalClose) {
+      modalClose.addEventListener('click', () => {
+        if (modal) modal.classList.remove('show');
+      });
+    }
+
+    if (modalCancel) {
+      modalCancel.addEventListener('click', () => {
+        if (modal) modal.classList.remove('show');
+      });
+    }
+
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('show');
+        }
+      });
+    }
+
+    if (clienteForm) {
+      clienteForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.guardarCliente();
+      });
+    }
+  }
+
+  editarCliente(id) {
+    const cliente = this.clientes.find(c => c.id === id);
+    if (!cliente) return;
+
+    this.editingClienteId = id;
+
+    document.getElementById('cliente-nombre').value = cliente.nombre;
+    document.getElementById('cliente-email').value = cliente.email;
+    document.getElementById('cliente-telefono').value = cliente.telefono;
+    document.getElementById('cliente-direccion').value = cliente.direccion;
+    document.getElementById('cliente-notas').value = cliente.notas || '';
+
+    const modalTitle = document.getElementById('cliente-modal-title');
+    if (modalTitle) modalTitle.textContent = 'Editar Cliente';
+
+    const modal = document.getElementById('cliente-modal');
+    if (modal) modal.classList.add('show');
+  }
+
+  eliminarCliente(id) {
+    if (!confirm('¿Está seguro de eliminar este cliente?')) return;
+
+    this.clientes = this.clientes.filter(c => c.id !== id);
+    this.guardarClientes();
+    this.renderizarClientes();
+    this.actualizarSelectClientes();
+    this.mostrarNotificacion('Cliente eliminado exitosamente', 'success');
+  }
+
+  guardarCliente() {
+    const nombre = document.getElementById('cliente-nombre').value.trim();
+    const email = document.getElementById('cliente-email').value.trim();
+    const telefono = document.getElementById('cliente-telefono').value.trim();
+    const direccion = document.getElementById('cliente-direccion').value.trim();
+    const notas = document.getElementById('cliente-notas').value.trim();
+
+    if (!nombre || !email || !telefono || !direccion) {
+      this.mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+      return;
+    }
+
+    if (this.editingClienteId) {
+      const cliente = this.clientes.find(c => c.id === this.editingClienteId);
+      if (cliente) {
+        cliente.nombre = nombre;
+        cliente.email = email;
+        cliente.telefono = telefono;
+        cliente.direccion = direccion;
+        cliente.notas = notas;
+        this.mostrarNotificacion('Cliente actualizado exitosamente', 'success');
+      }
+    } else {
+      const nuevoCliente = {
+        id: Date.now().toString(),
+        nombre,
+        email,
+        telefono,
+        direccion,
+        notas,
+        activo: true,
+        fechaRegistro: new Date().toISOString()
+      };
+      this.clientes.push(nuevoCliente);
+      this.mostrarNotificacion('Cliente creado exitosamente', 'success');
+    }
+
+    this.guardarClientes();
+    this.renderizarClientes();
+    this.actualizarSelectClientes();
+
+    const modal = document.getElementById('cliente-modal');
+    if (modal) modal.classList.remove('show');
+    this.limpiarFormularioCliente();
+  }
+
+  limpiarFormularioCliente() {
+    const clienteForm = document.getElementById('cliente-form');
+    if (clienteForm) {
+      clienteForm.reset();
     }
   }
 
