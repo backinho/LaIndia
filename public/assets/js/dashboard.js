@@ -4,9 +4,13 @@ class InventarioApp {
     this.movimientos = [];
     this.usuarios = [];
     this.clientes = [];
+    this.categorias = [];
+    this.proveedores = [];
     this.usuarioActual = null;
     this.editingUserId = null;
     this.editingClienteId = null;
+    this.editingCategoriaId = null;
+    this.editingProveedorId = null;
 
     this.cargarDatos();
     this.inicializarUsuarioActual();
@@ -18,11 +22,15 @@ class InventarioApp {
     const movimientosGuardados = localStorage.getItem('movimientos');
     const usuariosGuardados = localStorage.getItem('usuarios');
     const clientesGuardados = localStorage.getItem('clientes');
+    const categoriasGuardadas = localStorage.getItem('categorias');
+    const proveedoresGuardados = localStorage.getItem('proveedores');
 
     this.productos = productosGuardados ? JSON.parse(productosGuardados) : [];
     this.movimientos = movimientosGuardados ? JSON.parse(movimientosGuardados) : [];
     this.usuarios = usuariosGuardados ? JSON.parse(usuariosGuardados) : this.crearUsuariosIniciales();
     this.clientes = clientesGuardados ? JSON.parse(clientesGuardados) : this.crearClientesIniciales();
+    this.categorias = categoriasGuardadas ? JSON.parse(categoriasGuardadas) : this.crearCategoriasIniciales();
+    this.proveedores = proveedoresGuardados ? JSON.parse(proveedoresGuardados) : this.crearProveedoresIniciales();
   }
 
   crearUsuariosIniciales() {
@@ -69,6 +77,66 @@ class InventarioApp {
     return clientes;
   }
 
+  crearCategoriasIniciales() {
+    const categorias = [
+      {
+        id: '1',
+        nombre: 'Electrónica',
+        descripcion: 'Productos electrónicos y tecnológicos',
+        activo: true,
+        fechaRegistro: new Date().toISOString()
+      },
+      {
+        id: '2',
+        nombre: 'Ropa',
+        descripcion: 'Prendas de vestir y accesorios',
+        activo: true,
+        fechaRegistro: new Date().toISOString()
+      },
+      {
+        id: '3',
+        nombre: 'Alimentos',
+        descripcion: 'Productos alimenticios',
+        activo: true,
+        fechaRegistro: new Date().toISOString()
+      },
+      {
+        id: '4',
+        nombre: 'Herramientas',
+        descripcion: 'Herramientas y equipos',
+        activo: true,
+        fechaRegistro: new Date().toISOString()
+      },
+      {
+        id: '5',
+        nombre: 'Otros',
+        descripcion: 'Productos varios',
+        activo: true,
+        fechaRegistro: new Date().toISOString()
+      }
+    ];
+    this.guardarCategorias(categorias);
+    return categorias;
+  }
+
+  crearProveedoresIniciales() {
+    const proveedores = [
+      {
+        id: '1',
+        nombre: 'Proveedor General',
+        contacto: 'Juan Pérez',
+        email: 'contacto@proveedor.com',
+        telefono: '555-2000',
+        direccion: 'Calle Principal 123',
+        notas: 'Proveedor por defecto',
+        activo: true,
+        fechaRegistro: new Date().toISOString()
+      }
+    ];
+    this.guardarProveedores(proveedores);
+    return proveedores;
+  }
+
   inicializarUsuarioActual() {
     const usuarioGuardado = localStorage.getItem('usuarioActual');
     if (usuarioGuardado) {
@@ -102,6 +170,20 @@ class InventarioApp {
     localStorage.setItem('clientes', JSON.stringify(this.clientes));
   }
 
+  guardarCategorias(categorias) {
+    if (categorias) {
+      this.categorias = categorias;
+    }
+    localStorage.setItem('categorias', JSON.stringify(this.categorias));
+  }
+
+  guardarProveedores(proveedores) {
+    if (proveedores) {
+      this.proveedores = proveedores;
+    }
+    localStorage.setItem('proveedores', JSON.stringify(this.proveedores));
+  }
+
   inicializar() {
     this.inicializarTema();
     this.inicializarNavegacion();
@@ -112,6 +194,8 @@ class InventarioApp {
     this.inicializarEntrada();
     this.inicializarSalida();
     this.inicializarHistorial();
+    this.inicializarCategorias();
+    this.inicializarProveedores();
     this.inicializarClientes();
     this.inicializarUsuarios();
     this.inicializarPerfil();
@@ -144,6 +228,8 @@ class InventarioApp {
       'entrada': 'Entrada de Productos',
       'salida': 'Salida de Productos',
       'historial': 'Historial de Movimientos',
+      'categorias': 'Gestión de Categorías',
+      'proveedores': 'Gestión de Proveedores',
       'clientes': 'Manejo de Clientes',
       'usuarios': 'Manejo de Usuarios',
       'perfil': 'Mi Perfil'
@@ -1193,6 +1279,423 @@ class InventarioApp {
         this.renderizarHistorial(filter || 'todos', e.target.value);
       });
     }
+  }
+
+  inicializarCategorias() {
+    this.renderizarCategorias();
+    this.inicializarBusquedaCategorias();
+    this.inicializarModalCategoria();
+  }
+
+  renderizarCategorias(filtro = '') {
+    const tbody = document.getElementById('categorias-table');
+    if (!tbody) return;
+
+    const categoriasFiltradas = filtro
+      ? this.categorias.filter(c =>
+          c.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+          c.descripcion.toLowerCase().includes(filtro.toLowerCase())
+        )
+      : this.categorias;
+
+    if (categoriasFiltradas.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay categorías registradas</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = categoriasFiltradas.map(categoria => {
+      const totalProductos = this.productos.filter(p => p.categoria === categoria.nombre).length;
+      return `
+        <tr>
+          <td>#${categoria.id}</td>
+          <td>${categoria.nombre}</td>
+          <td>${categoria.descripcion}</td>
+          <td>${totalProductos}</td>
+          <td><span class="status-badge ${categoria.activo ? 'activo' : 'inactivo'}">${categoria.activo ? 'Activo' : 'Inactivo'}</span></td>
+          <td>
+            <button class="action-btn" onclick="app.editarCategoria('${categoria.id}')">Editar</button>
+            <button class="action-btn delete" onclick="app.eliminarCategoria('${categoria.id}')">Eliminar</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  inicializarBusquedaCategorias() {
+    const searchInput = document.getElementById('search-categorias');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.renderizarCategorias(e.target.value);
+      });
+    }
+  }
+
+  inicializarModalCategoria() {
+    const addCategoriaBtn = document.getElementById('add-categoria-btn');
+    const modal = document.getElementById('categoria-modal');
+    const modalClose = document.getElementById('categoria-modal-close');
+    const modalCancel = document.getElementById('categoria-modal-cancel');
+    const categoriaForm = document.getElementById('categoria-form');
+
+    if (addCategoriaBtn) {
+      addCategoriaBtn.addEventListener('click', () => {
+        this.editingCategoriaId = null;
+        this.limpiarFormularioCategoria();
+        const modalTitle = document.getElementById('categoria-modal-title');
+        if (modalTitle) modalTitle.textContent = 'Añadir Categoría';
+        if (modal) modal.classList.add('show');
+      });
+    }
+
+    if (modalClose) {
+      modalClose.addEventListener('click', () => {
+        if (modal) modal.classList.remove('show');
+      });
+    }
+
+    if (modalCancel) {
+      modalCancel.addEventListener('click', () => {
+        if (modal) modal.classList.remove('show');
+      });
+    }
+
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('show');
+        }
+      });
+    }
+
+    if (categoriaForm) {
+      categoriaForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.guardarCategoria();
+      });
+    }
+  }
+
+  editarCategoria(id) {
+    const categoria = this.categorias.find(c => c.id === id);
+    if (!categoria) return;
+
+    this.editingCategoriaId = id;
+
+    document.getElementById('categoria-nombre').value = categoria.nombre;
+    document.getElementById('categoria-descripcion').value = categoria.descripcion;
+
+    const modalTitle = document.getElementById('categoria-modal-title');
+    if (modalTitle) modalTitle.textContent = 'Editar Categoría';
+
+    const modal = document.getElementById('categoria-modal');
+    if (modal) modal.classList.add('show');
+  }
+
+  eliminarCategoria(id) {
+    const categoria = this.categorias.find(c => c.id === id);
+    if (!categoria) return;
+
+    const productosCategoria = this.productos.filter(p => p.categoria === categoria.nombre);
+    if (productosCategoria.length > 0) {
+      this.mostrarNotificacion(`No se puede eliminar la categoría porque tiene ${productosCategoria.length} productos asociados`, 'error');
+      return;
+    }
+
+    if (!confirm('¿Está seguro de eliminar esta categoría?')) return;
+
+    this.categorias = this.categorias.filter(c => c.id !== id);
+    this.guardarCategorias();
+    this.renderizarCategorias();
+    this.actualizarSelectsCategorias();
+    this.mostrarNotificacion('Categoría eliminada exitosamente', 'success');
+  }
+
+  guardarCategoria() {
+    const nombre = document.getElementById('categoria-nombre').value.trim();
+    const descripcion = document.getElementById('categoria-descripcion').value.trim();
+
+    if (!nombre || !descripcion) {
+      this.mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+      return;
+    }
+
+    if (this.editingCategoriaId) {
+      const categoria = this.categorias.find(c => c.id === this.editingCategoriaId);
+      if (categoria) {
+        const nombreAnterior = categoria.nombre;
+        categoria.nombre = nombre;
+        categoria.descripcion = descripcion;
+
+        this.productos.forEach(producto => {
+          if (producto.categoria === nombreAnterior) {
+            producto.categoria = nombre;
+          }
+        });
+        this.guardarProductos();
+
+        this.mostrarNotificacion('Categoría actualizada exitosamente', 'success');
+      }
+    } else {
+      const nuevaCategoria = {
+        id: Date.now().toString(),
+        nombre,
+        descripcion,
+        activo: true,
+        fechaRegistro: new Date().toISOString()
+      };
+      this.categorias.push(nuevaCategoria);
+      this.mostrarNotificacion('Categoría creada exitosamente', 'success');
+    }
+
+    this.guardarCategorias();
+    this.renderizarCategorias();
+    this.actualizarSelectsCategorias();
+
+    const modal = document.getElementById('categoria-modal');
+    if (modal) modal.classList.remove('show');
+    this.limpiarFormularioCategoria();
+  }
+
+  limpiarFormularioCategoria() {
+    const categoriaForm = document.getElementById('categoria-form');
+    if (categoriaForm) {
+      categoriaForm.reset();
+    }
+  }
+
+  actualizarSelectsCategorias() {
+    const selects = document.querySelectorAll('.producto-categoria');
+    const categoriasActivas = this.categorias.filter(c => c.activo);
+
+    selects.forEach(select => {
+      const currentValue = select.value;
+      select.innerHTML = '<option value="">Seleccionar categoría</option>' +
+        categoriasActivas.map(c =>
+          `<option value="${c.nombre}">${c.nombre}</option>`
+        ).join('');
+
+      if (currentValue) {
+        select.value = currentValue;
+      }
+    });
+  }
+
+  inicializarProveedores() {
+    this.renderizarProveedores();
+    this.inicializarBusquedaProveedores();
+    this.inicializarModalProveedor();
+  }
+
+  renderizarProveedores(filtro = '') {
+    const tbody = document.getElementById('proveedores-table');
+    if (!tbody) return;
+
+    const proveedoresFiltrados = filtro
+      ? this.proveedores.filter(p =>
+          p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+          p.contacto.toLowerCase().includes(filtro.toLowerCase()) ||
+          p.email.toLowerCase().includes(filtro.toLowerCase()) ||
+          p.telefono.toLowerCase().includes(filtro.toLowerCase())
+        )
+      : this.proveedores;
+
+    if (proveedoresFiltrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay proveedores registrados</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = proveedoresFiltrados.map(proveedor => `
+      <tr>
+        <td>#${proveedor.id}</td>
+        <td>${proveedor.nombre}</td>
+        <td>${proveedor.contacto}</td>
+        <td>${proveedor.email}</td>
+        <td>${proveedor.telefono}</td>
+        <td>${proveedor.direccion}</td>
+        <td><span class="status-badge ${proveedor.activo ? 'activo' : 'inactivo'}">${proveedor.activo ? 'Activo' : 'Inactivo'}</span></td>
+        <td>
+          <button class="action-btn" onclick="app.editarProveedor('${proveedor.id}')">Editar</button>
+          <button class="action-btn delete" onclick="app.eliminarProveedor('${proveedor.id}')">Eliminar</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  inicializarBusquedaProveedores() {
+    const searchInput = document.getElementById('search-proveedores');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        this.renderizarProveedores(e.target.value);
+      });
+    }
+  }
+
+  inicializarModalProveedor() {
+    const addProveedorBtn = document.getElementById('add-proveedor-btn');
+    const modal = document.getElementById('proveedor-modal');
+    const modalClose = document.getElementById('proveedor-modal-close');
+    const modalCancel = document.getElementById('proveedor-modal-cancel');
+    const proveedorForm = document.getElementById('proveedor-form');
+
+    if (addProveedorBtn) {
+      addProveedorBtn.addEventListener('click', () => {
+        this.editingProveedorId = null;
+        this.limpiarFormularioProveedor();
+        const modalTitle = document.getElementById('proveedor-modal-title');
+        if (modalTitle) modalTitle.textContent = 'Añadir Proveedor';
+        if (modal) modal.classList.add('show');
+      });
+    }
+
+    if (modalClose) {
+      modalClose.addEventListener('click', () => {
+        if (modal) modal.classList.remove('show');
+      });
+    }
+
+    if (modalCancel) {
+      modalCancel.addEventListener('click', () => {
+        if (modal) modal.classList.remove('show');
+      });
+    }
+
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('show');
+        }
+      });
+    }
+
+    if (proveedorForm) {
+      proveedorForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.guardarProveedor();
+      });
+    }
+  }
+
+  editarProveedor(id) {
+    const proveedor = this.proveedores.find(p => p.id === id);
+    if (!proveedor) return;
+
+    this.editingProveedorId = id;
+
+    document.getElementById('proveedor-nombre').value = proveedor.nombre;
+    document.getElementById('proveedor-contacto').value = proveedor.contacto;
+    document.getElementById('proveedor-email').value = proveedor.email;
+    document.getElementById('proveedor-telefono').value = proveedor.telefono;
+    document.getElementById('proveedor-direccion').value = proveedor.direccion;
+    document.getElementById('proveedor-notas').value = proveedor.notas || '';
+
+    const modalTitle = document.getElementById('proveedor-modal-title');
+    if (modalTitle) modalTitle.textContent = 'Editar Proveedor';
+
+    const modal = document.getElementById('proveedor-modal');
+    if (modal) modal.classList.add('show');
+  }
+
+  eliminarProveedor(id) {
+    const proveedor = this.proveedores.find(p => p.id === id);
+    if (!proveedor) return;
+
+    const productosProveedor = this.productos.filter(p => p.proveedor === proveedor.nombre);
+    if (productosProveedor.length > 0) {
+      this.mostrarNotificacion(`No se puede eliminar el proveedor porque tiene ${productosProveedor.length} productos asociados`, 'error');
+      return;
+    }
+
+    if (!confirm('¿Está seguro de eliminar este proveedor?')) return;
+
+    this.proveedores = this.proveedores.filter(p => p.id !== id);
+    this.guardarProveedores();
+    this.renderizarProveedores();
+    this.actualizarSelectsProveedores();
+    this.mostrarNotificacion('Proveedor eliminado exitosamente', 'success');
+  }
+
+  guardarProveedor() {
+    const nombre = document.getElementById('proveedor-nombre').value.trim();
+    const contacto = document.getElementById('proveedor-contacto').value.trim();
+    const email = document.getElementById('proveedor-email').value.trim();
+    const telefono = document.getElementById('proveedor-telefono').value.trim();
+    const direccion = document.getElementById('proveedor-direccion').value.trim();
+    const notas = document.getElementById('proveedor-notas').value.trim();
+
+    if (!nombre || !contacto || !email || !telefono || !direccion) {
+      this.mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+      return;
+    }
+
+    if (this.editingProveedorId) {
+      const proveedor = this.proveedores.find(p => p.id === this.editingProveedorId);
+      if (proveedor) {
+        const nombreAnterior = proveedor.nombre;
+        proveedor.nombre = nombre;
+        proveedor.contacto = contacto;
+        proveedor.email = email;
+        proveedor.telefono = telefono;
+        proveedor.direccion = direccion;
+        proveedor.notas = notas;
+
+        this.productos.forEach(producto => {
+          if (producto.proveedor === nombreAnterior) {
+            producto.proveedor = nombre;
+          }
+        });
+        this.guardarProductos();
+
+        this.mostrarNotificacion('Proveedor actualizado exitosamente', 'success');
+      }
+    } else {
+      const nuevoProveedor = {
+        id: Date.now().toString(),
+        nombre,
+        contacto,
+        email,
+        telefono,
+        direccion,
+        notas,
+        activo: true,
+        fechaRegistro: new Date().toISOString()
+      };
+      this.proveedores.push(nuevoProveedor);
+      this.mostrarNotificacion('Proveedor creado exitosamente', 'success');
+    }
+
+    this.guardarProveedores();
+    this.renderizarProveedores();
+    this.actualizarSelectsProveedores();
+
+    const modal = document.getElementById('proveedor-modal');
+    if (modal) modal.classList.remove('show');
+    this.limpiarFormularioProveedor();
+  }
+
+  limpiarFormularioProveedor() {
+    const proveedorForm = document.getElementById('proveedor-form');
+    if (proveedorForm) {
+      proveedorForm.reset();
+    }
+  }
+
+  actualizarSelectsProveedores() {
+    const inputs = document.querySelectorAll('.producto-proveedor');
+    const proveedoresActivos = this.proveedores.filter(p => p.activo);
+
+    inputs.forEach(input => {
+      if (input.tagName === 'SELECT') {
+        const currentValue = input.value;
+        input.innerHTML = '<option value="">Seleccionar proveedor</option>' +
+          proveedoresActivos.map(p =>
+            `<option value="${p.nombre}">${p.nombre}</option>`
+          ).join('');
+
+        if (currentValue) {
+          input.value = currentValue;
+        }
+      }
+    });
   }
 
   inicializarClientes() {

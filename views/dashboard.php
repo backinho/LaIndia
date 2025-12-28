@@ -31,6 +31,10 @@
           <span class="nav-icon">📦</span>
           <span class="nav-text">Inventario de Productos</span>
         </a>
+        <a href="#" class="nav-item" data-section="categorias">
+          <span class="nav-icon">🏷️</span>
+          <span class="nav-text">Gestión de Categorías</span>
+        </a>
         <a href="#" class="nav-item" data-section="entrada">
           <span class="nav-icon">📥</span>
           <span class="nav-text">Entrada de Productos</span>
@@ -42,6 +46,10 @@
         <a href="#" class="nav-item" data-section="historial">
           <span class="nav-icon">📋</span>
           <span class="nav-text">Historial de Movimientos</span>
+        </a>
+        <a href="#" class="nav-item" data-section="proveedores">
+          <span class="nav-icon">🏭</span>
+          <span class="nav-text">Gestión de Proveedores</span>
         </a>
         <a href="#" class="nav-item" data-section="clientes">
           <span class="nav-icon">👨‍💼</span>
@@ -95,6 +103,10 @@
           <?php include 'components/inventario.php'; ?>
         </section>
 
+        <section id="categorias" class="dashboard-section">
+          <?php include 'components/categorias.php'; ?>
+        </section>
+
         <section id="entrada" class="dashboard-section">
           <?php include 'components/entrada.php'; ?>
         </section>
@@ -105,6 +117,10 @@
 
         <section id="historial" class="dashboard-section">
           <?php include 'components/historial.php'; ?>
+        </section>
+
+        <section id="proveedores" class="dashboard-section">
+          <?php include 'components/proveedores.php'; ?>
         </section>
 
         <section id="clientes" class="dashboard-section">
@@ -198,6 +214,68 @@
         <button class="modal-close" id="producto-detalle-close">&times;</button>
       </div>
       <div class="producto-detalle-content" id="producto-detalle-content"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="categoria-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="categoria-modal-title">Añadir Categoría</h3>
+        <button class="modal-close" id="categoria-modal-close">&times;</button>
+      </div>
+      <form id="categoria-form">
+        <div class="form-group">
+          <label>Nombre de la Categoría</label>
+          <input type="text" id="categoria-nombre" class="form-input" required />
+        </div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea id="categoria-descripcion" class="form-input" rows="3" required></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="categoria-modal-cancel">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="proveedor-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="proveedor-modal-title">Añadir Proveedor</h3>
+        <button class="modal-close" id="proveedor-modal-close">&times;</button>
+      </div>
+      <form id="proveedor-form">
+        <div class="form-group">
+          <label>Nombre del Proveedor</label>
+          <input type="text" id="proveedor-nombre" class="form-input" required />
+        </div>
+        <div class="form-group">
+          <label>Persona de Contacto</label>
+          <input type="text" id="proveedor-contacto" class="form-input" required />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="proveedor-email" class="form-input" required />
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="tel" id="proveedor-telefono" class="form-input" required />
+        </div>
+        <div class="form-group">
+          <label>Dirección</label>
+          <textarea id="proveedor-direccion" class="form-input" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Notas (opcional)</label>
+          <textarea id="proveedor-notas" class="form-input" rows="2"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="proveedor-modal-cancel">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
     </div>
   </div>
 
