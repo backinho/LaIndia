@@ -11,5 +11,6 @@ $routes = [
     '/solicitar-recuperacion' => 'HomeController@solicitarRecuperacion',
     '/recuperar-contrasena' => 'HomeController@mostrarFormularioRecuperacion',
     '/restablecer-password' => 'HomeController@restablecerPassword',
+    '/productos/listar' => 'ProductoController@listar'
 
 ];

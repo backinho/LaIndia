@@ -12,9 +12,14 @@ class InventarioApp {
     this.editingCategoriaId = null;
     this.editingProveedorId = null;
 
+    this.inicializarDatos();
     this.cargarDatos();
     this.inicializarUsuarioActual();
     this.inicializar();
+  }
+
+  inicializarDatos(){
+    this.inicializarProductos();
   }
 
   cargarDatos() {
@@ -31,6 +36,8 @@ class InventarioApp {
     this.clientes = clientesGuardados ? JSON.parse(clientesGuardados) : this.crearClientesIniciales();
     this.categorias = categoriasGuardadas ? JSON.parse(categoriasGuardadas) : this.crearCategoriasIniciales();
     this.proveedores = proveedoresGuardados ? JSON.parse(proveedoresGuardados) : this.crearProveedoresIniciales();
+
+    console.log('Productos cargados:', this.productos);
   }
 
   crearUsuariosIniciales() {
@@ -148,8 +155,44 @@ class InventarioApp {
     this.actualizarInfoUsuario();
   }
 
-  guardarProductos() {
-    localStorage.setItem('productos', JSON.stringify(this.productos));
+  async inicializarProductos() {
+    const response = await fetch('productos/listar', {
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      console.error('Error al guardar productos en el servidor');
+      return;
+    }
+
+    if (response.ok) {
+      const data = await response.json();
+
+      console.log('Productos obtenidos del servidor:', data.data);
+
+      this.productos = data.data;
+
+      localStorage.setItem('productos', JSON.stringify(this.productos));
+    }
+  }
+
+  async guardarProductos() {
+    const response = await fetch('productos/listar', {
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      console.error('Error al guardar productos en el servidor');
+      return;
+    }
+
+    if (response.ok) {
+      const data = await response.json();
+
+      this.productos = data.products;
+
+      localStorage.setItem('productos', JSON.stringify(this.productos));
+    }
   }
 
   guardarMovimientos() {
