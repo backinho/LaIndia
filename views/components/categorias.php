@@ -8,8 +8,8 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Nombre</th>
+                    <th>Código</th>
                     <th>Descripción</th>
                     <th>Total Productos</th>
                     <th>Estado</th>

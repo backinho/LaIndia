@@ -2,13 +2,14 @@
     <h2 class="card-title">Inventario de Productos</h2>
     <div class="table-header">
         <input type="search" id="search-inventario-full" class="search-input" placeholder="Buscar productos..." />
-        <div class="filter-buttons">
-            <button class="filter-btn active" data-filter-cat="todos">Todos</button>
-            <button class="filter-btn" data-filter-cat="Electrónica">Electrónica</button>
-            <button class="filter-btn" data-filter-cat="Ropa">Ropa</button>
-            <button class="filter-btn" data-filter-cat="Alimentos">Alimentos</button>
-            <button class="filter-btn" data-filter-cat="Herramientas">Herramientas</button>
-            <button class="filter-btn" data-filter-cat="Otros">Otros</button>
+        <div class="filter-container">
+            <button class="main-filter-btn" id="mainFilterBtn">
+                <span>Seleccionar categoría</span>
+                <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="filter-options" id="filterOptions">
+                <button class="filter-btn active" data-filter-cat="todos">Todos</button>
+            </div>
         </div>
     </div>
     <div class="table-container">

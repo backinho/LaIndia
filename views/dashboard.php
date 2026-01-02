@@ -224,13 +224,18 @@
         <button class="modal-close" id="categoria-modal-close">&times;</button>
       </div>
       <form id="categoria-form">
+        <input type="hidden" name="categoria-id" id="categoria-id" />
         <div class="form-group">
           <label>Nombre de la Categoría</label>
-          <input type="text" id="categoria-nombre" class="form-input" required />
+          <input type="text" id="categoria-nombre" name="categoria-nombre" class="form-input" required />
+        </div>
+        <div class="form-group">
+          <label>Código de la Categoría</label>
+          <input type="text" id="categoria-codigo" name="categoria-codigo" class="form-input" required />
         </div>
         <div class="form-group">
           <label>Descripción</label>
-          <textarea id="categoria-descripcion" class="form-input" rows="3" required></textarea>
+          <textarea id="categoria-descripcion" name="categoria-descripcion" class="form-input" rows="3" required></textarea>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" id="categoria-modal-cancel">Cancelar</button>
@@ -274,6 +279,48 @@
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" id="proveedor-modal-cancel">Cancelar</button>
           <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="confirmacion-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="confirmacion-titulo">Confirmar Acción</h3>
+        <button class="modal-close" id="confirmacion-close">&times;</button>
+      </div>
+      <form id="confirmacion-mensaje">
+        <input type="hidden" id="confirmacion-id" name="confirmacion-id">
+        <p>¿Seguro de confirmar la acción?</p>
+        <div class="password-note">
+          <strong>Advertencia:</strong> Esta acción es irreversible. Por favor, confirme que desea proceder.
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="confirmacion-cancel">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="confirmacion-confirm">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="pattern-confirmacion">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="pattern-confirmacion-titulo">Confirmar Patrón de Seguridad</h3>
+        <button class="modal-close" id="pattern-confirmacion-close">&times;</button>
+      </div>
+      <form>
+        <div class="form-group">
+          <label for="pattern-password">Por favor, ingrese su contraseña:</label>
+          <input type="password" id="pattern-password" class="form-input" required />
+        </div>
+        <div class="password-note">
+          <strong>Nota:</strong> Esta verificación es necesaria para confirmar su identidad antes de proceder.
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="pattern-confirmacion-cancel">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="pattern-confirmacion-verify">Verificar Patrón</button>
         </div>
       </form>
     </div>

@@ -2,7 +2,7 @@
 
 require_once BASE_PATH . '/config/database.php';
 
-class ProductoModel
+class ClienteModel
 {
     private $db;
 
@@ -12,9 +12,9 @@ class ProductoModel
         $this->db = $pdo;
     }
 
-    public function listarProductos()
+    public function listarClientes()
     {
-        $stmt = $this->db->prepare("SELECT p.*, c.nombre AS categoria_nombre, s.nombre AS proveedor_nombre FROM productos p LEFT JOIN categorias c ON p.categoria_id = c.id INNER JOIN proveedores s ON p.proveedor_id = s.id");
+        $stmt = $this->db->prepare("SELECT * FROM clientes");
         $stmt->execute();
         $response = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return $response;

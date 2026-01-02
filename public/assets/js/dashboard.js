@@ -12,177 +12,125 @@ class InventarioApp {
     this.editingCategoriaId = null;
     this.editingProveedorId = null;
 
-    this.inicializarDatos();
-    this.cargarDatos();
-    this.inicializarUsuarioActual();
-    this.inicializar();
+    this.cargarDatosCompletos().then(() => {
+      this.inicializarUsuarioActual();
+      this.inicializar();
+    });
   }
 
-  inicializarDatos(){
-    this.inicializarProductos();
-  }
-
-  cargarDatos() {
-    const productosGuardados = localStorage.getItem('productos');
-    const movimientosGuardados = localStorage.getItem('movimientos');
-    const usuariosGuardados = localStorage.getItem('usuarios');
-    const clientesGuardados = localStorage.getItem('clientes');
-    const categoriasGuardadas = localStorage.getItem('categorias');
-    const proveedoresGuardados = localStorage.getItem('proveedores');
-
-    this.productos = productosGuardados ? JSON.parse(productosGuardados) : [];
-    this.movimientos = movimientosGuardados ? JSON.parse(movimientosGuardados) : [];
-    this.usuarios = usuariosGuardados ? JSON.parse(usuariosGuardados) : this.crearUsuariosIniciales();
-    this.clientes = clientesGuardados ? JSON.parse(clientesGuardados) : this.crearClientesIniciales();
-    this.categorias = categoriasGuardadas ? JSON.parse(categoriasGuardadas) : this.crearCategoriasIniciales();
-    this.proveedores = proveedoresGuardados ? JSON.parse(proveedoresGuardados) : this.crearProveedoresIniciales();
-
-    console.log('Productos cargados:', this.productos);
-  }
-
-  crearUsuariosIniciales() {
-    const usuarios = [
-      {
-        id: '1',
-        nombre: 'Administrador',
-        email: 'admin@ejemplo.com',
-        telefono: '555-0001',
-        password: 'admin123',
-        rol: 'admin',
-        activo: true,
-        fechaRegistro: new Date().toISOString()
-      },
-      {
-        id: '2',
-        nombre: 'Usuario Demo',
-        email: 'usuario@ejemplo.com',
-        telefono: '555-0002',
-        password: 'usuario123',
-        rol: 'usuario',
-        activo: true,
-        fechaRegistro: new Date().toISOString()
-      }
-    ];
-    this.guardarUsuarios(usuarios);
-    return usuarios;
-  }
-
-  crearClientesIniciales() {
-    const clientes = [
-      {
-        id: '1',
-        nombre: 'Cliente General',
-        email: 'general@cliente.com',
-        telefono: '555-1000',
-        direccion: 'Dirección General',
-        notas: 'Cliente por defecto',
-        activo: true,
-        fechaRegistro: new Date().toISOString()
-      }
-    ];
-    this.guardarClientes(clientes);
-    return clientes;
-  }
-
-  crearCategoriasIniciales() {
-    const categorias = [
-      {
-        id: '1',
-        nombre: 'Electrónica',
-        descripcion: 'Productos electrónicos y tecnológicos',
-        activo: true,
-        fechaRegistro: new Date().toISOString()
-      },
-      {
-        id: '2',
-        nombre: 'Ropa',
-        descripcion: 'Prendas de vestir y accesorios',
-        activo: true,
-        fechaRegistro: new Date().toISOString()
-      },
-      {
-        id: '3',
-        nombre: 'Alimentos',
-        descripcion: 'Productos alimenticios',
-        activo: true,
-        fechaRegistro: new Date().toISOString()
-      },
-      {
-        id: '4',
-        nombre: 'Herramientas',
-        descripcion: 'Herramientas y equipos',
-        activo: true,
-        fechaRegistro: new Date().toISOString()
-      },
-      {
-        id: '5',
-        nombre: 'Otros',
-        descripcion: 'Productos varios',
-        activo: true,
-        fechaRegistro: new Date().toISOString()
-      }
-    ];
-    this.guardarCategorias(categorias);
-    return categorias;
-  }
-
-  crearProveedoresIniciales() {
-    const proveedores = [
-      {
-        id: '1',
-        nombre: 'Proveedor General',
-        contacto: 'Juan Pérez',
-        email: 'contacto@proveedor.com',
-        telefono: '555-2000',
-        direccion: 'Calle Principal 123',
-        notas: 'Proveedor por defecto',
-        activo: true,
-        fechaRegistro: new Date().toISOString()
-      }
-    ];
-    this.guardarProveedores(proveedores);
-    return proveedores;
+  async cargarDatosCompletos() {
+    await Promise.all([
+      this.inicializarProductosList(),
+      this.inicializarCategoriasList(),
+      this.inicializarProveedoresList(),
+      this.inicializarClientesList(),
+      this.inicializarUsuariosList(),
+    ]);
   }
 
   inicializarUsuarioActual() {
-    const usuarioGuardado = localStorage.getItem('usuarioActual');
+    const usuarioGuardado = localStorage.getItem("usuarioActual");
     if (usuarioGuardado) {
       this.usuarioActual = JSON.parse(usuarioGuardado);
     } else {
       this.usuarioActual = this.usuarios[0];
-      localStorage.setItem('usuarioActual', JSON.stringify(this.usuarioActual));
+      localStorage.setItem("usuarioActual", JSON.stringify(this.usuarioActual));
     }
     this.actualizarInfoUsuario();
   }
 
-  async inicializarProductos() {
-    const response = await fetch('productos/listar', {
-      method: 'POST',
-    })
+  async inicializarProductosList() {
+    const response = await fetch("productos/listar", {
+      method: "POST",
+    });
 
     if (!response.ok) {
-      console.error('Error al guardar productos en el servidor');
+      console.error("Error al guardar productos en el servidor");
       return;
     }
 
     if (response.ok) {
       const data = await response.json();
 
-      console.log('Productos obtenidos del servidor:', data.data);
-
       this.productos = data.data;
+    }
+  }
 
-      localStorage.setItem('productos', JSON.stringify(this.productos));
+  async inicializarCategoriasList() {
+    const response = await fetch("categorias/listar", {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      console.error("Error al guardar categorías en el servidor");
+      return;
+    }
+
+    if (response.ok) {
+      const data = await response.json();
+
+      this.categorias = data.data;
+    }
+  }
+
+  async inicializarProveedoresList() {
+    const response = await fetch("proveedores/listar", {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      console.error("Error al guardar proveedores en el servidor");
+      return;
+    }
+
+    if (response.ok) {
+      const data = await response.json();
+
+      this.proveedores = data.data;
+    }
+  }
+
+  async inicializarClientesList() {
+    const response = await fetch("clientes/listar", {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      console.error("Error al guardar clientes en el servidor");
+      return;
+    }
+
+    if (response.ok) {
+      const data = await response.json();
+
+      this.clientes = data.data;
+    }
+  }
+
+  async inicializarUsuariosList() {
+    const response = await fetch("usuarios/listar", {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      console.error("Error al guardar usuarios en el servidor");
+      return;
+    }
+
+    if (response.ok) {
+      const data = await response.json();
+
+      this.usuarios = data.data;
     }
   }
 
   async guardarProductos() {
-    const response = await fetch('productos/listar', {
-      method: 'POST',
-    })
+    const response = await fetch("productos/listar", {
+      method: "POST",
+    });
 
     if (!response.ok) {
-      console.error('Error al guardar productos en el servidor');
+      console.error("Error al guardar productos en el servidor");
       return;
     }
 
@@ -190,42 +138,18 @@ class InventarioApp {
       const data = await response.json();
 
       this.productos = data.products;
-
-      localStorage.setItem('productos', JSON.stringify(this.productos));
     }
   }
 
   guardarMovimientos() {
-    localStorage.setItem('movimientos', JSON.stringify(this.movimientos));
+    //localStorage.setItem("movimientos", JSON.stringify(this.movimientos));
   }
 
-  guardarUsuarios(usuarios) {
-    if (usuarios) {
-      this.usuarios = usuarios;
-    }
-    localStorage.setItem('usuarios', JSON.stringify(this.usuarios));
-  }
+  guardarUsuarios(usuarios) {}
 
-  guardarClientes(clientes) {
-    if (clientes) {
-      this.clientes = clientes;
-    }
-    localStorage.setItem('clientes', JSON.stringify(this.clientes));
-  }
+  guardarClientes(clientes) {}
 
-  guardarCategorias(categorias) {
-    if (categorias) {
-      this.categorias = categorias;
-    }
-    localStorage.setItem('categorias', JSON.stringify(this.categorias));
-  }
-
-  guardarProveedores(proveedores) {
-    if (proveedores) {
-      this.proveedores = proveedores;
-    }
-    localStorage.setItem('proveedores', JSON.stringify(this.proveedores));
-  }
+  guardarProveedores(proveedores) {}
 
   inicializar() {
     this.inicializarTema();
@@ -242,111 +166,116 @@ class InventarioApp {
     this.inicializarClientes();
     this.inicializarUsuarios();
     this.inicializarPerfil();
-    this.mostrarNotificacion('Bienvenido al Sistema de Inventario', 'success');
+    this.mostrarNotificacion("Bienvenido al Sistema de Inventario", "success");
   }
 
   inicializarTema() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
 
-    const themeToggle = document.getElementById('theme-toggle');
+    const themeToggle = document.getElementById("theme-toggle");
     if (themeToggle) {
-      themeToggle.addEventListener('click', () => {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
+      themeToggle.addEventListener("click", () => {
+        const currentTheme =
+          document.documentElement.getAttribute("data-theme");
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
       });
     }
   }
 
   inicializarNavegacion() {
-    const navItems = document.querySelectorAll('.nav-item');
-    const sections = document.querySelectorAll('.dashboard-section');
-    const sectionTitle = document.getElementById('section-title');
+    const navItems = document.querySelectorAll(".nav-item");
+    const sections = document.querySelectorAll(".dashboard-section");
+    const sectionTitle = document.getElementById("section-title");
 
     const titles = {
-      'resumen': 'Resumen',
-      'inventario': 'Inventario de Productos',
-      'entrada': 'Entrada de Productos',
-      'salida': 'Salida de Productos',
-      'historial': 'Historial de Movimientos',
-      'categorias': 'Gestión de Categorías',
-      'proveedores': 'Gestión de Proveedores',
-      'clientes': 'Manejo de Clientes',
-      'usuarios': 'Manejo de Usuarios',
-      'perfil': 'Mi Perfil'
+      resumen: "Resumen",
+      inventario: "Inventario de Productos",
+      entrada: "Entrada de Productos",
+      salida: "Salida de Productos",
+      historial: "Historial de Movimientos",
+      categorias: "Gestión de Categorías",
+      proveedores: "Gestión de Proveedores",
+      clientes: "Manejo de Clientes",
+      usuarios: "Manejo de Usuarios",
+      perfil: "Mi Perfil",
     };
 
-    navItems.forEach(item => {
-      item.addEventListener('click', (e) => {
+    navItems.forEach((item) => {
+      item.addEventListener("click", (e) => {
         e.preventDefault();
-        const sectionId = item.getAttribute('data-section');
+        const sectionId = item.getAttribute("data-section");
         if (!sectionId) return;
 
-        navItems.forEach(nav => nav.classList.remove('active'));
-        item.classList.add('active');
+        navItems.forEach((nav) => nav.classList.remove("active"));
+        item.classList.add("active");
 
-        sections.forEach(section => section.classList.remove('active'));
+        sections.forEach((section) => section.classList.remove("active"));
         const targetSection = document.getElementById(sectionId);
         if (targetSection) {
-          targetSection.classList.add('active');
+          targetSection.classList.add("active");
         }
 
         if (sectionTitle) {
           sectionTitle.textContent = titles[sectionId];
         }
 
-        if (sectionId === 'resumen') {
+        if (sectionId === "resumen") {
           this.renderizarResumen();
         }
 
-        if (sectionId === 'inventario') {
+        if (sectionId === "inventario") {
           this.renderizarInventarioCompleto();
         }
 
-        if (sectionId === 'salida') {
+        if (sectionId === "salida") {
           this.actualizarSelectProductos();
           this.actualizarSelectClientes();
         }
 
-        if (sectionId === 'perfil') {
+        if (sectionId === "perfil") {
           this.cargarDatosPerfil();
         }
 
         if (window.innerWidth <= 1024) {
-          const sidebar = document.getElementById('sidebar');
+          const sidebar = document.getElementById("sidebar");
           if (sidebar) {
-            sidebar.classList.remove('active');
+            sidebar.classList.remove("active");
           }
         }
       });
     });
 
-    const dropdownItems = document.querySelectorAll('.dropdown-item[data-section]');
-    dropdownItems.forEach(item => {
-      item.addEventListener('click', (e) => {
+    const dropdownItems = document.querySelectorAll(
+      ".dropdown-item[data-section]"
+    );
+    dropdownItems.forEach((item) => {
+      item.addEventListener("click", (e) => {
         e.preventDefault();
-        const sectionId = item.getAttribute('data-section');
+        const sectionId = item.getAttribute("data-section");
         if (!sectionId) return;
 
-        navItems.forEach(nav => nav.classList.remove('active'));
-        const targetNav = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
+        navItems.forEach((nav) => nav.classList.remove("active"));
+        const targetNav = document.querySelector(
+          `.nav-item[data-section="${sectionId}"]`
+        );
         if (targetNav) {
-          targetNav.classList.add('active');
+          targetNav.classList.add("active");
         }
 
-        sections.forEach(section => section.classList.remove('active'));
+        sections.forEach((section) => section.classList.remove("active"));
         const targetSection = document.getElementById(sectionId);
         if (targetSection) {
-          targetSection.classList.add('active');
+          targetSection.classList.add("active");
         }
 
         if (sectionTitle) {
           sectionTitle.textContent = titles[sectionId];
         }
 
-        if (sectionId === 'perfil') {
+        if (sectionId === "perfil") {
           this.cargarDatosPerfil();
         }
       });
@@ -354,60 +283,65 @@ class InventarioApp {
   }
 
   inicializarSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const mobileToggle = document.getElementById('mobile-toggle');
-    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById("sidebar");
+    const mobileToggle = document.getElementById("mobile-toggle");
+    const sidebarToggle = document.getElementById("sidebar-toggle");
 
     if (mobileToggle) {
-      mobileToggle.addEventListener('click', () => {
+      mobileToggle.addEventListener("click", () => {
         if (sidebar) {
-          sidebar.classList.toggle('active');
+          sidebar.classList.toggle("active");
         }
       });
     }
 
     if (sidebarToggle) {
-      sidebarToggle.addEventListener('click', () => {
+      sidebarToggle.addEventListener("click", () => {
         if (sidebar) {
-          sidebar.classList.remove('active');
+          sidebar.classList.remove("active");
         }
       });
     }
 
-    document.addEventListener('click', (e) => {
+    document.addEventListener("click", (e) => {
       if (window.innerWidth <= 1024) {
         const target = e.target;
-        if (sidebar && !sidebar.contains(target) && mobileToggle && !mobileToggle.contains(target)) {
-          sidebar.classList.remove('active');
+        if (
+          sidebar &&
+          !sidebar.contains(target) &&
+          mobileToggle &&
+          !mobileToggle.contains(target)
+        ) {
+          sidebar.classList.remove("active");
         }
       }
     });
   }
 
   inicializarMenuUsuario() {
-    const userButton = document.getElementById('user-button');
-    const userMenu = document.querySelector('.user-menu');
-    const logout = document.getElementById('logout');
+    const userButton = document.getElementById("user-button");
+    const userMenu = document.querySelector(".user-menu");
+    const logout = document.getElementById("logout");
 
     if (userButton) {
-      userButton.addEventListener('click', (e) => {
+      userButton.addEventListener("click", (e) => {
         e.stopPropagation();
         if (userMenu) {
-          userMenu.classList.toggle('active');
+          userMenu.classList.toggle("active");
         }
       });
     }
 
-    document.addEventListener('click', () => {
+    document.addEventListener("click", () => {
       if (userMenu) {
-        userMenu.classList.remove('active');
+        userMenu.classList.remove("active");
       }
     });
 
     if (logout) {
-      logout.addEventListener('click', (e) => {
+      logout.addEventListener("click", (e) => {
         e.preventDefault();
-        this.mostrarNotificacion('Sesión cerrada exitosamente', 'success');
+        this.mostrarNotificacion("Sesión cerrada exitosamente", "success");
         setTimeout(() => {
           window.location.reload();
         }, 1500);
@@ -418,11 +352,13 @@ class InventarioApp {
   actualizarInfoUsuario() {
     if (!this.usuarioActual) return;
 
-    const userAvatar = document.getElementById('user-avatar');
-    const userNameDisplay = document.getElementById('user-name-display');
+    const userAvatar = document.getElementById("user-avatar");
+    const userNameDisplay = document.getElementById("user-name-display");
 
     if (userAvatar) {
-      userAvatar.textContent = this.usuarioActual.nombre.charAt(0).toUpperCase();
+      userAvatar.textContent = this.usuarioActual.nombre
+        .charAt(0)
+        .toUpperCase();
     }
 
     if (userNameDisplay) {
@@ -436,19 +372,27 @@ class InventarioApp {
 
   renderizarResumen() {
     const totalProductos = this.productos.length;
-    const totalEntradas = this.movimientos.filter(m => m.tipo === 'entrada').length;
-    const totalSalidas = this.movimientos.filter(m => m.tipo === 'salida').length;
-    const valorInventario = this.productos.reduce((sum, p) => sum + (p.stock * p.precio), 0);
+    const totalEntradas = this.movimientos.filter(
+      (m) => m.tipo === "entrada"
+    ).length;
+    const totalSalidas = this.movimientos.filter(
+      (m) => m.tipo === "salida"
+    ).length;
+    const valorInventario = this.productos.reduce(
+      (sum, p) => sum + p.stock * p.precio,
+      0
+    );
 
-    const totalProductosEl = document.getElementById('total-productos');
-    const totalEntradasEl = document.getElementById('total-entradas');
-    const totalSalidasEl = document.getElementById('total-salidas');
-    const valorInventarioEl = document.getElementById('valor-inventario');
+    const totalProductosEl = document.getElementById("total-productos");
+    const totalEntradasEl = document.getElementById("total-entradas");
+    const totalSalidasEl = document.getElementById("total-salidas");
+    const valorInventarioEl = document.getElementById("valor-inventario");
 
     if (totalProductosEl) totalProductosEl.textContent = totalProductos;
     if (totalEntradasEl) totalEntradasEl.textContent = totalEntradas;
     if (totalSalidasEl) totalSalidasEl.textContent = totalSalidas;
-    if (valorInventarioEl) valorInventarioEl.textContent = `$${valorInventario.toFixed(2)}`;
+    if (valorInventarioEl)
+      valorInventarioEl.textContent = `$${valorInventario.toFixed(2)}`;
 
     this.renderizarStockBajo();
     this.renderizarUltimosMovimientos();
@@ -456,24 +400,36 @@ class InventarioApp {
   }
 
   renderizarStockBajo() {
-    const tbody = document.getElementById('stock-bajo-table');
+    const tbody = document.getElementById("stock-bajo-table");
     if (!tbody) return;
 
     const productosStockBajo = this.productos
-      .filter(p => p.stock < 10)
+      .filter((p) => p.stock < 10)
       .sort((a, b) => a.stock - b.stock)
       .slice(0, 5);
 
     if (productosStockBajo.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay productos con stock bajo</td></tr>';
+      tbody.innerHTML =
+        '<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay productos con stock bajo</td></tr>';
       return;
     }
 
-    tbody.innerHTML = productosStockBajo.map(producto => {
-      const estadoClass = producto.stock === 0 ? 'error' : producto.stock < 5 ? 'warning' : 'info';
-      const estadoTexto = producto.stock === 0 ? 'Sin stock' : producto.stock < 5 ? 'Crítico' : 'Bajo';
+    tbody.innerHTML = productosStockBajo
+      .map((producto) => {
+        const estadoClass =
+          producto.stock === 0
+            ? "error"
+            : producto.stock < 5
+            ? "warning"
+            : "info";
+        const estadoTexto =
+          producto.stock === 0
+            ? "Sin stock"
+            : producto.stock < 5
+            ? "Crítico"
+            : "Bajo";
 
-      return `
+        return `
         <tr>
           <td>${producto.nombre}</td>
           <td>${producto.codigo}</td>
@@ -481,151 +437,241 @@ class InventarioApp {
           <td><span class="status-badge" style="background: rgba(var(--${estadoClass}-rgb, 231, 76, 60), 0.2); color: var(--${estadoClass});">${estadoTexto}</span></td>
         </tr>
       `;
-    }).join('');
+      })
+      .join("");
   }
 
   renderizarUltimosMovimientos() {
-    const tbody = document.getElementById('ultimos-movimientos-table');
+    const tbody = document.getElementById("ultimos-movimientos-table");
     if (!tbody) return;
 
-    const ultimosMovimientos = [...this.movimientos]
-      .reverse()
-      .slice(0, 5);
+    const ultimosMovimientos = [...this.movimientos].reverse().slice(0, 5);
 
     if (ultimosMovimientos.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay movimientos registrados</td></tr>';
+      tbody.innerHTML =
+        '<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay movimientos registrados</td></tr>';
       return;
     }
 
-    tbody.innerHTML = ultimosMovimientos.map(movimiento => {
-      const fecha = new Date(movimiento.fecha);
-      const fechaFormateada = fecha.toLocaleString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+    tbody.innerHTML = ultimosMovimientos
+      .map((movimiento) => {
+        const fecha = new Date(movimiento.fecha);
+        const fechaFormateada = fecha.toLocaleString("es-ES", {
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
 
-      const productosTexto = movimiento.productos ? `${movimiento.productos.length} productos` : movimiento.productoNombre;
+        const productosTexto = movimiento.productos
+          ? `${movimiento.productos.length} productos`
+          : movimiento.productoNombre;
 
-      return `
+        return `
         <tr>
-          <td><span class="status-badge ${movimiento.tipo}">${movimiento.tipo === 'entrada' ? 'Entrada' : 'Salida'}</span></td>
+          <td><span class="status-badge ${movimiento.tipo}">${
+          movimiento.tipo === "entrada" ? "Entrada" : "Salida"
+        }</span></td>
           <td>${productosTexto}</td>
           <td>${movimiento.cantidadTotal || movimiento.cantidad}</td>
           <td>${fechaFormateada}</td>
         </tr>
       `;
-    }).join('');
+      })
+      .join("");
   }
 
   renderizarActividadSemanal() {
-    const entradasSemana = document.getElementById('entradas-semana');
-    const salidasSemana = document.getElementById('salidas-semana');
+    const entradasSemana = document.getElementById("entradas-semana");
+    const salidasSemana = document.getElementById("salidas-semana");
 
     if (entradasSemana) {
-      const entradas = this.movimientos.filter(m => m.tipo === 'entrada').length;
+      const entradas = this.movimientos.filter(
+        (m) => m.tipo === "entrada"
+      ).length;
       entradasSemana.textContent = entradas;
     }
 
     if (salidasSemana) {
-      const salidas = this.movimientos.filter(m => m.tipo === 'salida').length;
+      const salidas = this.movimientos.filter(
+        (m) => m.tipo === "salida"
+      ).length;
       salidasSemana.textContent = salidas;
     }
   }
 
   inicializarInventario() {
     this.renderizarInventarioCompleto();
+    this.renderizarFiltrosInventario();
     this.inicializarBusquedaInventario();
     this.inicializarFiltrosInventario();
   }
 
-  renderizarInventarioCompleto(filtro = '', categoria = 'todos') {
-    const tbody = document.getElementById('inventario-full-table');
+  renderizarInventarioCompleto(filtro = "", categoria = "todos") {
+    const tbody = document.getElementById("inventario-full-table");
     if (!tbody) return;
 
     let productosFiltrados = this.productos;
 
-    if (categoria !== 'todos') {
-      productosFiltrados = productosFiltrados.filter(p => p.categoria === categoria);
+    if (categoria !== "todos") {
+      productosFiltrados = productosFiltrados.filter(
+        (p) => p.categoria_nombre === categoria
+      );
     }
 
     if (filtro) {
-      productosFiltrados = productosFiltrados.filter(p =>
-        p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-        p.codigo.toLowerCase().includes(filtro.toLowerCase()) ||
-        p.categoria.toLowerCase().includes(filtro.toLowerCase()) ||
-        p.proveedor.toLowerCase().includes(filtro.toLowerCase())
+      productosFiltrados = productosFiltrados.filter(
+        (p) =>
+          p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+          p.codigo.toLowerCase().includes(filtro.toLowerCase()) ||
+          p.categoria_nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+          p.proveedor_nombre.toLowerCase().includes(filtro.toLowerCase())
       );
     }
 
     if (productosFiltrados.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay productos en el inventario</td></tr>';
+      tbody.innerHTML =
+        '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay productos en el inventario</td></tr>';
       return;
     }
 
-    tbody.innerHTML = productosFiltrados.map(producto => {
-      const valorTotal = (producto.stock * producto.precio).toFixed(2);
-      return `
+    tbody.innerHTML = productosFiltrados
+      .map((producto) => {
+        const valorTotal = (producto.stock * producto.precio).toFixed(2);
+        return `
         <tr>
           <td>${producto.codigo}</td>
           <td>${producto.nombre}</td>
-          <td>${producto.categoria}</td>
+          <td>${producto.categoria_nombre}</td>
           <td>${producto.stock}</td>
-          <td>$${producto.precio.toFixed(2)}</td>
-          <td>${producto.proveedor}</td>
+          <td>$${parseFloat(producto.precio).toFixed(2)}</td>
+          <td>${producto.proveedor_nombre}</td>
           <td>$${valorTotal}</td>
           <td>
-            <button class="action-btn" onclick="app.verDetalleProducto('${producto.id}')">Ver Detalle</button>
+            <button class="action-btn" onclick="app.verDetalleProducto('${
+              producto.id
+            }')">Ver Detalle</button>
           </td>
         </tr>
       `;
-    }).join('');
+      })
+      .join("");
+  }
+
+  renderizarFiltrosInventario() {
+    const mainFilterBtn = document.getElementById("mainFilterBtn");
+    const filterOptions = document.getElementById("filterOptions");
+
+    mainFilterBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      filterOptions.classList.toggle("show");
+      mainFilterBtn.classList.toggle("active");
+    });
+
+    if (!filterOptions) return;
+
+    let categorias = this.categorias;
+
+    if (categorias.length === 0) {
+      filterOptions.innerHTML = "<div>No hay categorías disponibles</div>";
+      return;
+    }
+
+    filterOptions.innerHTML =
+      '<button class="filter-btn filter-cat active" data-filter-cat="todos">Todos</button>';
+
+    filterOptions.innerHTML += categorias
+      .map((categoria) => {
+        return `
+        <button class="filter-btn filter-cat" data-filter-cat="${categoria.nombre}">${categoria.nombre}</button>
+      `;
+      })
+      .join("");
+
+    const filterButtons = document.querySelectorAll(".filter-cat");
+
+    filterButtons.forEach((button) => {
+      button.addEventListener("click", function () {
+        const filterCat = this.getAttribute("data-filter-cat");
+
+        filterButtons.forEach((btn) => btn.classList.remove("active"));
+        this.classList.add("active");
+
+        if (filterCat === "todos") {
+          mainFilterBtn.innerHTML =
+            '<span>Seleccionar categoría</span><i class="fas fa-chevron-down"></i>';
+          mainFilterBtn.classList.remove("active");
+        } else {
+          mainFilterBtn.innerHTML = `<span>${filterCat}</span><i class="fas fa-chevron-down"></i>`;
+          mainFilterBtn.classList.add("active");
+        }
+      });
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!filterOptions.contains(e.target) && e.target !== mainFilterBtn) {
+        filterOptions.classList.remove("show");
+        mainFilterBtn.classList.remove("active");
+      }
+    });
+
+    filterOptions.addEventListener("click", function (e) {
+      e.stopPropagation();
+    });
   }
 
   inicializarBusquedaInventario() {
-    const searchInput = document.getElementById('search-inventario-full');
+    const searchInput = document.getElementById("search-inventario-full");
     if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        const activeFilter = document.querySelector('[data-filter-cat].filter-btn.active');
-        const categoria = activeFilter ? activeFilter.getAttribute('data-filter-cat') : 'todos';
+      searchInput.addEventListener("input", (e) => {
+        const activeFilter = document.querySelector(
+          "[data-filter-cat].filter-btn.active"
+        );
+        const categoria = activeFilter
+          ? activeFilter.getAttribute("data-filter-cat")
+          : "todos";
         this.renderizarInventarioCompleto(e.target.value, categoria);
       });
     }
   }
 
   inicializarFiltrosInventario() {
-    const filterButtons = document.querySelectorAll('[data-filter-cat].filter-btn');
+    const filterButtons = document.querySelectorAll(
+      "[data-filter-cat].filter-btn"
+    );
 
-    filterButtons.forEach(button => {
-      button.addEventListener('click', (e) => {
+    filterButtons.forEach((button) => {
+      button.addEventListener("click", (e) => {
         const target = e.target;
-        const categoria = target.getAttribute('data-filter-cat');
+        const categoria = target.getAttribute("data-filter-cat");
 
-        filterButtons.forEach(btn => btn.classList.remove('active'));
-        target.classList.add('active');
+        filterButtons.forEach((btn) => btn.classList.remove("active"));
+        target.classList.add("active");
 
-        const searchInput = document.getElementById('search-inventario-full');
-        this.renderizarInventarioCompleto(searchInput ? searchInput.value : '', categoria || 'todos');
+        const searchInput = document.getElementById("search-inventario-full");
+        this.renderizarInventarioCompleto(
+          searchInput ? searchInput.value : "",
+          categoria || "todos"
+        );
       });
     });
   }
 
   verDetalleProducto(productoId) {
-    const producto = this.productos.find(p => p.id === productoId);
+    const producto = this.productos.find((p) => p.id === productoId);
     if (!producto) return;
 
-    const modal = document.getElementById('producto-detalle-modal');
-    const content = document.getElementById('producto-detalle-content');
-    const titulo = document.getElementById('producto-detalle-titulo');
+    const modal = document.getElementById("producto-detalle-modal");
+    const content = document.getElementById("producto-detalle-content");
+    const titulo = document.getElementById("producto-detalle-titulo");
 
     if (titulo) {
       titulo.textContent = `Detalles de ${producto.nombre}`;
     }
 
-    const movimientosProducto = this.movimientos.filter(m => {
+    const movimientosProducto = this.movimientos.filter((m) => {
       if (m.productos) {
-        return m.productos.some(p => p.id === productoId);
+        return m.productos.some((p) => p.id === productoId);
       }
       return m.productoId === productoId;
     });
@@ -645,7 +691,7 @@ class InventarioApp {
           </div>
           <div class="detalle-item">
             <span class="detalle-label">Categoría</span>
-            <span class="detalle-value">${producto.categoria}</span>
+            <span class="detalle-value">${producto.categoria_nombre}</span>
           </div>
           <div class="detalle-item">
             <span class="detalle-label">Stock Actual</span>
@@ -653,7 +699,9 @@ class InventarioApp {
           </div>
           <div class="detalle-item">
             <span class="detalle-label">Precio Unitario</span>
-            <span class="detalle-value">$${producto.precio.toFixed(2)}</span>
+            <span class="detalle-value">$${parseFloat(producto.precio).toFixed(
+              2
+            )}</span>
           </div>
           <div class="detalle-item">
             <span class="detalle-label">Valor Total</span>
@@ -661,164 +709,350 @@ class InventarioApp {
           </div>
           <div class="detalle-item">
             <span class="detalle-label">Proveedor</span>
-            <span class="detalle-value">${producto.proveedor}</span>
+            <span class="detalle-value">${producto.proveedor_nombre}</span>
           </div>
         </div>
 
         <div class="movimientos-producto">
           <h4>Historial de Movimientos (${movimientosProducto.length})</h4>
-          ${movimientosProducto.length === 0 ? '<p style="color: var(--text-secondary);">No hay movimientos registrados para este producto</p>' :
-            movimientosProducto.reverse().slice(0, 10).map(mov => {
-              const fecha = new Date(mov.fecha);
-              const fechaFormateada = fecha.toLocaleString('es-ES');
-              let cantidad = mov.cantidad;
-              if (mov.productos) {
-                const prodEnMov = mov.productos.find(p => p.id === productoId);
-                if (prodEnMov) cantidad = prodEnMov.cantidad;
-              }
-              return `
+          ${
+            movimientosProducto.length === 0
+              ? '<p style="color: var(--text-secondary);">No hay movimientos registrados para este producto</p>'
+              : movimientosProducto
+                  .reverse()
+                  .slice(0, 10)
+                  .map((mov) => {
+                    const fecha = new Date(mov.fecha);
+                    const fechaFormateada = fecha.toLocaleString("es-ES");
+                    let cantidad = mov.cantidad;
+                    if (mov.productos) {
+                      const prodEnMov = mov.productos.find(
+                        (p) => p.id === productoId
+                      );
+                      if (prodEnMov) cantidad = prodEnMov.cantidad;
+                    }
+                    return `
                 <div class="movimiento-item">
                   <div class="movimiento-info">
-                    <span class="status-badge ${mov.tipo}">${mov.tipo === 'entrada' ? 'Entrada' : 'Salida'}</span>
+                    <span class="status-badge ${mov.tipo}">${
+                      mov.tipo === "entrada" ? "Entrada" : "Salida"
+                    }</span>
                     <span>${cantidad} unidades</span>
                     <span class="movimiento-fecha">${fechaFormateada}</span>
                   </div>
                   <span>${mov.usuario}</span>
                 </div>
               `;
-            }).join('')
+                  })
+                  .join("")
           }
         </div>
       `;
     }
 
     if (modal) {
-      modal.classList.add('show');
+      modal.classList.add("show");
     }
 
-    const closeBtn = document.getElementById('producto-detalle-close');
+    const closeBtn = document.getElementById("producto-detalle-close");
     if (closeBtn) {
       closeBtn.onclick = () => {
-        if (modal) modal.classList.remove('show');
+        if (modal) modal.classList.remove("show");
       };
     }
 
     if (modal) {
       modal.onclick = (e) => {
         if (e.target === modal) {
-          modal.classList.remove('show');
+          modal.classList.remove("show");
         }
       };
     }
   }
 
+  renderDefaultEntradaItem() {
+    const listEntrada = document.getElementById("productos-entrada-list");
+    if (!listEntrada) return;
+
+    const countItems = listEntrada.querySelectorAll(
+      ".producto-entrada-item"
+    ).length;
+    const existingMsg = document.getElementById("no-productos");
+
+    if (countItems === 0 && !existingMsg) {
+      const defaultItem = document.createElement("div");
+      defaultItem.innerHTML =
+        '<p style="color: var(--text-secondary); display: flex; justify-content: center;" id="no-productos">No hay productos agregados</p>';
+      listEntrada.appendChild(defaultItem);
+    }
+  }
+
   inicializarEntrada() {
-    const addBtn = document.getElementById('add-producto-entrada');
-    const registrarBtn = document.getElementById('registrar-entrada');
+    const entryBtnOptions = document.getElementById("entrada-options-btn");
+    const entryFilterOptions = document.getElementById(
+      "entrada-filter-options"
+    );
+    const addBtn = document.getElementById("producto-existente-btn");
+    const addNewBtn = document.getElementById("producto-nuevo-btn");
+    const registrarBtn = document.getElementById("registrar-entrada");
+
+    this.renderDefaultEntradaItem();
+
+    entryBtnOptions.addEventListener("click", function (e) {
+      e.stopPropagation();
+      entryFilterOptions.classList.toggle("show");
+      entryBtnOptions.classList.toggle("active");
+    });
+
+    document.addEventListener("click", function (e) {
+      if (
+        !entryFilterOptions.contains(e.target) &&
+        e.target !== entryBtnOptions
+      ) {
+        entryFilterOptions.classList.remove("show");
+        entryBtnOptions.classList.remove("active");
+      }
+    });
+
+    entryFilterOptions.addEventListener("click", function (e) {
+      e.stopPropagation();
+    });
 
     if (addBtn) {
-      addBtn.addEventListener('click', () => {
-        this.agregarProductoEntrada();
+      addBtn.addEventListener("click", () => {
+        const option = addBtn.getAttribute("data-option-entrada");
+        this.agregarProductoEntrada(option);
+      });
+    }
+
+    if (addNewBtn) {
+      addNewBtn.addEventListener("click", () => {
+        const option = addNewBtn.getAttribute("data-option-entrada");
+        this.agregarProductoEntrada(option);
       });
     }
 
     if (registrarBtn) {
-      registrarBtn.addEventListener('click', () => {
+      registrarBtn.addEventListener("click", () => {
         this.registrarEntrada();
       });
     }
   }
 
-  agregarProductoEntrada() {
-    const list = document.getElementById('productos-entrada-list');
+  agregarProductoEntrada(option) {
+    const list = document.getElementById("productos-entrada-list");
     if (!list) return;
 
-    const currentItems = list.querySelectorAll('.producto-entrada-item').length;
-    const newItem = document.createElement('div');
-    newItem.className = 'producto-entrada-item';
-    newItem.innerHTML = `
-      <div class="item-header">
-        <h4>Producto ${currentItems + 1}</h4>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Nombre del Producto</label>
-          <input type="text" class="form-input producto-nombre" required />
-        </div>
-        <div class="form-group">
-          <label>Código/SKU</label>
-          <input type="text" class="form-input producto-codigo" required />
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Cantidad</label>
-          <input type="number" class="form-input producto-cantidad" min="1" required />
-        </div>
-        <div class="form-group">
-          <label>Precio Unitario</label>
-          <input type="number" class="form-input producto-precio" step="0.01" min="0" required />
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Categoría</label>
-          <select class="form-input producto-categoria" required>
-            <option value="">Seleccionar categoría</option>
-            <option value="Electrónica">Electrónica</option>
-            <option value="Ropa">Ropa</option>
-            <option value="Alimentos">Alimentos</option>
-            <option value="Herramientas">Herramientas</option>
-            <option value="Otros">Otros</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Proveedor</label>
-          <input type="text" class="form-input producto-proveedor" required />
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Notas (opcional)</label>
-        <textarea class="form-input producto-notas" rows="2"></textarea>
-      </div>
-      <button type="button" class="btn btn-secondary btn-remove-producto">Eliminar Producto</button>
-    `;
+    const noProductosMsg = document.getElementById("no-productos");
+    if (noProductosMsg) {
+      list.innerHTML = "";
+    }
 
-    list.appendChild(newItem);
+    const newItem = document.createElement("div");
+    newItem.className = "producto-entrada-item ";
+    newItem.style.animation = "fadeIn 0.3s ease-in-out";
 
-    const removeBtn = newItem.querySelector('.btn-remove-producto');
+    const currentItems = list.querySelectorAll(".producto-entrada-item").length;
+
+    if (option === "nuevo") {
+      let categoriasOptions = "";
+      if (this.categorias && Array.isArray(this.categorias)) {
+        this.categorias.forEach((categoria) => {
+          categoriasOptions += `<option value="${categoria.id}">${categoria.nombre}</option>`;
+        });
+      }
+
+      let proveedoresOptions = "";
+      if (this.proveedores && Array.isArray(this.proveedores)) {
+        this.proveedores.forEach((proveedor) => {
+          proveedoresOptions += `<option value="${proveedor.id}">${proveedor.nombre}</option>`;
+        });
+      }
+
+      newItem.innerHTML = `
+        <div class="item-header">
+          <h4>Producto ${currentItems + 1}</h4>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre del Producto</label>
+            <input type="text" class="form-input producto-nombre" required />
+          </div>
+          <div class="form-group">
+            <label>Código</label>
+            <input type="text" class="form-input producto-codigo" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cantidad</label>
+            <input type="number" class="form-input producto-cantidad" min="1" required />
+          </div>
+          <div class="form-group">
+            <label>Precio Unitario</label>
+            <input type="number" class="form-input producto-precio" step="0.01" min="0" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Categoría</label>
+            <select class="form-input producto-categoria" required>
+              <option value="">Seleccionar categoría</option>
+              ${categoriasOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Proveedor</label>
+            <select class="form-input producto-proveedor" required>
+              <option value="">Seleccionar proveedor</option>
+              ${proveedoresOptions}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Notas (opcional)</label>
+          <textarea class="form-input producto-notas" rows="2"></textarea>
+        </div>
+        <button type="button" class="btn btn-secondary btn-remove-producto">Eliminar Producto</button>
+      `;
+
+      list.appendChild(newItem);
+    } else if (option === "existente") {
+      let productosOptions = "";
+      if (this.productos && Array.isArray(this.productos)) {
+        this.productos.forEach((producto) => {
+          productosOptions += `<option value="${producto.id}">${producto.nombre} - Stock: ${producto.stock}</option>`;
+        });
+      }
+
+      let proveedoresOptions = "";
+      if (this.proveedores && Array.isArray(this.proveedores)) {
+        this.proveedores.forEach((proveedor) => {
+          proveedoresOptions += `<option value="${proveedor.id}">${proveedor.nombre}</option>`;
+        });
+      }
+
+      newItem.innerHTML = `
+        <div class="item-header">
+          <h4>Producto ${currentItems + 1}</h4>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Producto</label>
+            <select class="form-input entrada-producto" required>
+              <option value="">Seleccionar producto</option>
+              ${productosOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Codigo</label>
+            <input type="text" class="form-input entrada-code" readonly />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cantidad</label>
+            <input type="number" class="form-input entrada-cantidad" min="1" required />
+          </div>
+          <div class="form-group">
+            <label>Precio Unitario</label>
+            <input type="number" class="form-input entrada-precio" min="1" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Categoría</label>
+            <input type="text" class="form-input entrada-categoria" readonly />
+          </div>
+          <div class="form-group">
+            <label>Precio Unitario</label>
+            <select class="form-input entrada-precio" min="1" required>
+              <option value="">Seleccionar proveedor</option>
+              ${proveedoresOptions}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Notas (opcional)</label>
+          <textarea class="form-input entrada-notas" rows="2"></textarea>
+        </div>
+        <button type="button" class="btn btn-secondary btn-remove-producto">Eliminar Producto</button>
+      `;
+
+      const selectProduct = newItem.querySelector(".entrada-producto");
+
+      selectProduct.addEventListener("change", (e) => {
+        const productoId = e.target.value;
+        const producto = this.productos.find((p) => p.id === productoId);
+        const categoriaInput = newItem.querySelector(".entrada-categoria");
+        const codeInput = newItem.querySelector(".entrada-code");
+
+        if (producto && categoriaInput && codeInput) {
+          categoriaInput.value = producto.categoria_nombre;
+          codeInput.value = producto.codigo;
+        } else if (categoriaInput && codeInput) {
+          categoriaInput.value = "";
+          codeInput.value = "";
+        }
+      });
+
+      list.appendChild(newItem);
+    }
+
+    const removeBtn = newItem.querySelector(".btn-remove-producto");
     if (removeBtn) {
-      removeBtn.style.display = 'inline-block';
-      removeBtn.addEventListener('click', () => {
+      removeBtn.addEventListener("click", () => {
         newItem.remove();
-        this.actualizarNumeracionProductos('entrada');
+        this.actualizarNumeracionProductos("entrada");
+
+        const updatedList = document.getElementById("productos-entrada-list");
+        const remainingItems = updatedList.querySelectorAll(
+          ".producto-entrada-item"
+        ).length;
+
+        if (remainingItems === 0) {
+          this.renderDefaultEntradaItem();
+        }
+
+        this.mostrarBotonesEliminarEntrada();
       });
     }
 
+    this.actualizarNumeracionProductos("entrada");
     this.mostrarBotonesEliminarEntrada();
   }
 
   mostrarBotonesEliminarEntrada() {
-    const list = document.getElementById('productos-entrada-list');
+    const list = document.getElementById("productos-entrada-list");
     if (!list) return;
 
-    const items = list.querySelectorAll('.producto-entrada-item');
+    const items = list.querySelectorAll(".producto-entrada-item");
+    const noProductosMsg = document.getElementById("no-productos");
+
+    if (noProductosMsg) {
+      return;
+    }
+
     items.forEach((item, index) => {
-      const removeBtn = item.querySelector('.btn-remove-producto');
+      const removeBtn = item.querySelector(".btn-remove-producto");
       if (removeBtn) {
-        removeBtn.style.display = items.length > 1 ? 'inline-block' : 'none';
+        removeBtn.style.display = items.length >= 1 ? "inline-block" : "none";
       }
     });
   }
 
   actualizarNumeracionProductos(tipo) {
-    const listId = tipo === 'entrada' ? 'productos-entrada-list' : 'productos-salida-list';
+    const listId =
+      tipo === "entrada" ? "productos-entrada-list" : "productos-salida-list";
     const list = document.getElementById(listId);
     if (!list) return;
 
-    const items = list.querySelectorAll(tipo === 'entrada' ? '.producto-entrada-item' : '.producto-salida-item');
+    const items = list.querySelectorAll(
+      tipo === "entrada" ? ".producto-entrada-item" : ".producto-salida-item"
+    );
+
     items.forEach((item, index) => {
-      const header = item.querySelector('.item-header h4');
+      const header = item.querySelector(".item-header h4");
       if (header) {
         header.textContent = `Producto ${index + 1}`;
       }
@@ -826,33 +1060,53 @@ class InventarioApp {
   }
 
   registrarEntrada() {
-    const list = document.getElementById('productos-entrada-list');
+    const list = document.getElementById("productos-entrada-list");
     if (!list) return;
 
-    const items = list.querySelectorAll('.producto-entrada-item');
+    const items = list.querySelectorAll(".producto-entrada-item");
     const productos = [];
 
     for (let item of items) {
-      const codigo = item.querySelector('.producto-codigo').value.trim();
-      const nombre = item.querySelector('.producto-nombre').value.trim();
-      const cantidad = parseInt(item.querySelector('.producto-cantidad').value);
-      const precio = parseFloat(item.querySelector('.producto-precio').value);
-      const categoria = item.querySelector('.producto-categoria').value;
-      const proveedor = item.querySelector('.producto-proveedor').value.trim();
-      const notas = item.querySelector('.producto-notas').value.trim();
+      const codigo = item.querySelector(".producto-codigo").value.trim();
+      const nombre = item.querySelector(".producto-nombre").value.trim();
+      const cantidad = parseInt(item.querySelector(".producto-cantidad").value);
+      const precio = parseFloat(item.querySelector(".producto-precio").value);
+      const categoria = item.querySelector(".producto-categoria").value;
+      const proveedor = item.querySelector(".producto-proveedor").value.trim();
+      const notas = item.querySelector(".producto-notas").value.trim();
 
-      if (!codigo || !nombre || !cantidad || !precio || !categoria || !proveedor) {
-        this.mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+      if (
+        !codigo ||
+        !nombre ||
+        !cantidad ||
+        !precio ||
+        !categoria ||
+        !proveedor
+      ) {
+        this.mostrarNotificacion(
+          "Por favor complete todos los campos requeridos",
+          "error"
+        );
         return;
       }
 
-      productos.push({ codigo, nombre, cantidad, precio, categoria, proveedor, notas });
+      productos.push({
+        codigo,
+        nombre,
+        cantidad,
+        precio,
+        categoria,
+        proveedor,
+        notas,
+      });
     }
 
     let cantidadTotal = 0;
 
-    productos.forEach(prod => {
-      const productoExistente = this.productos.find(p => p.codigo === prod.codigo);
+    productos.forEach((prod) => {
+      const productoExistente = this.productos.find(
+        (p) => p.codigo === prod.codigo
+      );
 
       if (productoExistente) {
         productoExistente.stock += prod.cantidad;
@@ -866,7 +1120,7 @@ class InventarioApp {
           categoria: prod.categoria,
           stock: prod.cantidad,
           precio: prod.precio,
-          proveedor: prod.proveedor
+          proveedor: prod.proveedor,
         };
         this.productos.push(nuevoProducto);
         prod.id = nuevoProducto.id;
@@ -877,20 +1131,23 @@ class InventarioApp {
 
     const movimiento = {
       id: Date.now().toString(),
-      tipo: 'entrada',
+      tipo: "entrada",
       productos: productos,
       cantidadTotal: cantidadTotal,
       fecha: new Date().toISOString(),
-      usuario: this.usuarioActual ? this.usuarioActual.nombre : 'Usuario',
+      usuario: this.usuarioActual ? this.usuarioActual.nombre : "Usuario",
       proveedor: productos[0].proveedor,
-      detalles: `Entrada de ${productos.length} producto(s) - Total: ${cantidadTotal} unidades`
+      detalles: `Entrada de ${productos.length} producto(s) - Total: ${cantidadTotal} unidades`,
     };
 
     this.movimientos.push(movimiento);
     this.guardarProductos();
     this.guardarMovimientos();
     this.renderizarInventarioCompleto();
-    this.mostrarNotificacion(`Entrada registrada exitosamente: ${productos.length} productos`, 'success');
+    this.mostrarNotificacion(
+      `Entrada registrada exitosamente: ${productos.length} productos`,
+      "success"
+    );
 
     list.innerHTML = `
       <div class="producto-entrada-item">
@@ -944,17 +1201,17 @@ class InventarioApp {
   }
 
   inicializarSalida() {
-    const addBtn = document.getElementById('add-producto-salida');
-    const registrarBtn = document.getElementById('registrar-salida');
+    const addBtn = document.getElementById("add-producto-salida");
+    const registrarBtn = document.getElementById("registrar-salida");
 
     if (addBtn) {
-      addBtn.addEventListener('click', () => {
+      addBtn.addEventListener("click", () => {
         this.agregarProductoSalida();
       });
     }
 
     if (registrarBtn) {
-      registrarBtn.addEventListener('click', () => {
+      registrarBtn.addEventListener("click", () => {
         this.registrarSalida();
       });
     }
@@ -965,12 +1222,12 @@ class InventarioApp {
   }
 
   agregarProductoSalida() {
-    const list = document.getElementById('productos-salida-list');
+    const list = document.getElementById("productos-salida-list");
     if (!list) return;
 
-    const currentItems = list.querySelectorAll('.producto-salida-item').length;
-    const newItem = document.createElement('div');
-    newItem.className = 'producto-salida-item';
+    const currentItems = list.querySelectorAll(".producto-salida-item").length;
+    const newItem = document.createElement("div");
+    newItem.className = "producto-salida-item";
     newItem.innerHTML = `
       <div class="item-header">
         <h4>Producto ${currentItems + 1}</h4>
@@ -1013,34 +1270,38 @@ class InventarioApp {
 
     list.appendChild(newItem);
 
-    const selectProducto = newItem.querySelector('.salida-producto');
-    const productosDisponibles = this.productos.filter(p => p.stock > 0);
+    const selectProducto = newItem.querySelector(".salida-producto");
+    const productosDisponibles = this.productos.filter((p) => p.stock > 0);
 
     if (selectProducto) {
-      selectProducto.innerHTML = '<option value="">Seleccionar producto</option>' +
-        productosDisponibles.map(p =>
-          `<option value="${p.id}">${p.nombre} (${p.codigo}) - Stock: ${p.stock}</option>`
-        ).join('');
+      selectProducto.innerHTML =
+        '<option value="">Seleccionar producto</option>' +
+        productosDisponibles
+          .map(
+            (p) =>
+              `<option value="${p.id}">${p.nombre} (${p.codigo}) - Stock: ${p.stock}</option>`
+          )
+          .join("");
 
-      selectProducto.addEventListener('change', (e) => {
+      selectProducto.addEventListener("change", (e) => {
         const productoId = e.target.value;
-        const producto = this.productos.find(p => p.id === productoId);
-        const stockInput = newItem.querySelector('.salida-stock');
+        const producto = this.productos.find((p) => p.id === productoId);
+        const stockInput = newItem.querySelector(".salida-stock");
 
         if (producto && stockInput) {
           stockInput.value = producto.stock.toString();
         } else if (stockInput) {
-          stockInput.value = '';
+          stockInput.value = "";
         }
       });
     }
 
-    const removeBtn = newItem.querySelector('.btn-remove-salida');
+    const removeBtn = newItem.querySelector(".btn-remove-salida");
     if (removeBtn) {
-      removeBtn.style.display = 'inline-block';
-      removeBtn.addEventListener('click', () => {
+      removeBtn.style.display = "inline-block";
+      removeBtn.addEventListener("click", () => {
         newItem.remove();
-        this.actualizarNumeracionProductos('salida');
+        this.actualizarNumeracionProductos("salida");
       });
     }
 
@@ -1048,47 +1309,51 @@ class InventarioApp {
   }
 
   mostrarBotonesEliminarSalida() {
-    const list = document.getElementById('productos-salida-list');
+    const list = document.getElementById("productos-salida-list");
     if (!list) return;
 
-    const items = list.querySelectorAll('.producto-salida-item');
+    const items = list.querySelectorAll(".producto-salida-item");
     items.forEach((item, index) => {
-      const removeBtn = item.querySelector('.btn-remove-salida');
+      const removeBtn = item.querySelector(".btn-remove-salida");
       if (removeBtn) {
-        removeBtn.style.display = items.length > 1 ? 'inline-block' : 'none';
+        removeBtn.style.display = items.length > 1 ? "inline-block" : "none";
       }
     });
   }
 
   inicializarCambiosProductoSalida() {
-    document.addEventListener('change', (e) => {
-      if (e.target.classList.contains('salida-producto')) {
-        const item = e.target.closest('.producto-salida-item');
+    document.addEventListener("change", (e) => {
+      if (e.target.classList.contains("salida-producto")) {
+        const item = e.target.closest(".producto-salida-item");
         if (!item) return;
 
         const productoId = e.target.value;
-        const producto = this.productos.find(p => p.id === productoId);
-        const stockInput = item.querySelector('.salida-stock');
+        const producto = this.productos.find((p) => p.id === productoId);
+        const stockInput = item.querySelector(".salida-stock");
 
         if (producto && stockInput) {
           stockInput.value = producto.stock.toString();
         } else if (stockInput) {
-          stockInput.value = '';
+          stockInput.value = "";
         }
       }
     });
   }
 
   actualizarSelectProductos() {
-    const selects = document.querySelectorAll('.salida-producto');
-    const productosDisponibles = this.productos.filter(p => p.stock > 0);
+    const selects = document.querySelectorAll(".salida-producto");
+    const productosDisponibles = this.productos.filter((p) => p.stock > 0);
 
-    selects.forEach(select => {
+    selects.forEach((select) => {
       const currentValue = select.value;
-      select.innerHTML = '<option value="">Seleccionar producto</option>' +
-        productosDisponibles.map(p =>
-          `<option value="${p.id}">${p.nombre} (${p.codigo}) - Stock: ${p.stock}</option>`
-        ).join('');
+      select.innerHTML =
+        '<option value="">Seleccionar producto</option>' +
+        productosDisponibles
+          .map(
+            (p) =>
+              `<option value="${p.id}">${p.nombre} (${p.codigo}) - Stock: ${p.stock}</option>`
+          )
+          .join("");
 
       if (currentValue) {
         select.value = currentValue;
@@ -1097,57 +1362,64 @@ class InventarioApp {
   }
 
   actualizarSelectClientes() {
-    const select = document.getElementById('salida-cliente-select');
+    const select = document.getElementById("salida-cliente-select");
     if (!select) return;
 
-    const clientesActivos = this.clientes.filter(c => c.activo);
+    const clientesActivos = this.clientes.filter((c) => c.activo);
 
-    select.innerHTML = '<option value="">Seleccionar cliente</option>' +
-      clientesActivos.map(c =>
-        `<option value="${c.id}">${c.nombre}</option>`
-      ).join('');
+    select.innerHTML =
+      '<option value="">Seleccionar cliente</option>' +
+      clientesActivos
+        .map((c) => `<option value="${c.id}">${c.nombre}</option>`)
+        .join("");
   }
 
   registrarSalida() {
-    const list = document.getElementById('productos-salida-list');
-    const clienteSelect = document.getElementById('salida-cliente-select');
+    const list = document.getElementById("productos-salida-list");
+    const clienteSelect = document.getElementById("salida-cliente-select");
 
     if (!list || !clienteSelect) return;
 
     const clienteId = clienteSelect.value;
     if (!clienteId) {
-      this.mostrarNotificacion('Por favor seleccione un cliente', 'error');
+      this.mostrarNotificacion("Por favor seleccione un cliente", "error");
       return;
     }
 
-    const cliente = this.clientes.find(c => c.id === clienteId);
+    const cliente = this.clientes.find((c) => c.id === clienteId);
     if (!cliente) {
-      this.mostrarNotificacion('Cliente no encontrado', 'error');
+      this.mostrarNotificacion("Cliente no encontrado", "error");
       return;
     }
 
-    const items = list.querySelectorAll('.producto-salida-item');
+    const items = list.querySelectorAll(".producto-salida-item");
     const productos = [];
 
     for (let item of items) {
-      const productoId = item.querySelector('.salida-producto').value;
-      const cantidad = parseInt(item.querySelector('.salida-cantidad').value);
-      const motivo = item.querySelector('.salida-motivo').value;
-      const notas = item.querySelector('.salida-notas').value.trim();
+      const productoId = item.querySelector(".salida-producto").value;
+      const cantidad = parseInt(item.querySelector(".salida-cantidad").value);
+      const motivo = item.querySelector(".salida-motivo").value;
+      const notas = item.querySelector(".salida-notas").value.trim();
 
       if (!productoId || !cantidad || !motivo) {
-        this.mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+        this.mostrarNotificacion(
+          "Por favor complete todos los campos requeridos",
+          "error"
+        );
         return;
       }
 
-      const producto = this.productos.find(p => p.id === productoId);
+      const producto = this.productos.find((p) => p.id === productoId);
       if (!producto) {
-        this.mostrarNotificacion('Producto no encontrado', 'error');
+        this.mostrarNotificacion("Producto no encontrado", "error");
         return;
       }
 
       if (cantidad > producto.stock) {
-        this.mostrarNotificacion(`Stock insuficiente para ${producto.nombre}`, 'error');
+        this.mostrarNotificacion(
+          `Stock insuficiente para ${producto.nombre}`,
+          "error"
+        );
         return;
       }
 
@@ -1157,14 +1429,14 @@ class InventarioApp {
         codigo: producto.codigo,
         cantidad,
         motivo,
-        notas
+        notas,
       });
     }
 
     let cantidadTotal = 0;
 
-    productos.forEach(prod => {
-      const producto = this.productos.find(p => p.id === prod.id);
+    productos.forEach((prod) => {
+      const producto = this.productos.find((p) => p.id === prod.id);
       if (producto) {
         producto.stock -= prod.cantidad;
         cantidadTotal += prod.cantidad;
@@ -1173,14 +1445,14 @@ class InventarioApp {
 
     const movimiento = {
       id: Date.now().toString(),
-      tipo: 'salida',
+      tipo: "salida",
       productos: productos,
       cantidadTotal: cantidadTotal,
       fecha: new Date().toISOString(),
-      usuario: this.usuarioActual ? this.usuarioActual.nombre : 'Usuario',
+      usuario: this.usuarioActual ? this.usuarioActual.nombre : "Usuario",
       cliente: cliente.nombre,
       clienteId: cliente.id,
-      detalles: `Salida de ${productos.length} producto(s) - Total: ${cantidadTotal} unidades - Cliente: ${cliente.nombre}`
+      detalles: `Salida de ${productos.length} producto(s) - Total: ${cantidadTotal} unidades - Cliente: ${cliente.nombre}`,
     };
 
     this.movimientos.push(movimiento);
@@ -1188,7 +1460,10 @@ class InventarioApp {
     this.guardarMovimientos();
     this.actualizarSelectProductos();
     this.renderizarInventarioCompleto();
-    this.mostrarNotificacion(`Salida registrada exitosamente: ${productos.length} productos`, 'success');
+    this.mostrarNotificacion(
+      `Salida registrada exitosamente: ${productos.length} productos`,
+      "success"
+    );
 
     list.innerHTML = `
       <div class="producto-salida-item">
@@ -1233,7 +1508,7 @@ class InventarioApp {
     `;
 
     if (clienteSelect) {
-      clienteSelect.value = '';
+      clienteSelect.value = "";
     }
 
     this.actualizarSelectProductos();
@@ -1245,81 +1520,99 @@ class InventarioApp {
     this.inicializarBusquedaHistorial();
   }
 
-  renderizarHistorial(filtroTipo = 'todos', filtroBusqueda = '') {
-    const tbody = document.getElementById('historial-table');
+  renderizarHistorial(filtroTipo = "todos", filtroBusqueda = "") {
+    const tbody = document.getElementById("historial-table");
     if (!tbody) return;
 
     let movimientosFiltrados = [...this.movimientos].reverse();
 
-    if (filtroTipo !== 'todos') {
-      movimientosFiltrados = movimientosFiltrados.filter(m => m.tipo === filtroTipo);
+    if (filtroTipo !== "todos") {
+      movimientosFiltrados = movimientosFiltrados.filter(
+        (m) => m.tipo === filtroTipo
+      );
     }
 
     if (filtroBusqueda) {
-      movimientosFiltrados = movimientosFiltrados.filter(m => {
+      movimientosFiltrados = movimientosFiltrados.filter((m) => {
         const searchLower = filtroBusqueda.toLowerCase();
-        return m.usuario.toLowerCase().includes(searchLower) ||
-               m.detalles.toLowerCase().includes(searchLower) ||
-               (m.cliente && m.cliente.toLowerCase().includes(searchLower)) ||
-               (m.proveedor && m.proveedor.toLowerCase().includes(searchLower)) ||
-               (m.productoNombre && m.productoNombre.toLowerCase().includes(searchLower));
+        return (
+          m.usuario.toLowerCase().includes(searchLower) ||
+          m.detalles.toLowerCase().includes(searchLower) ||
+          (m.cliente && m.cliente.toLowerCase().includes(searchLower)) ||
+          (m.proveedor && m.proveedor.toLowerCase().includes(searchLower)) ||
+          (m.productoNombre &&
+            m.productoNombre.toLowerCase().includes(searchLower))
+        );
       });
     }
 
     if (movimientosFiltrados.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay movimientos registrados</td></tr>';
+      tbody.innerHTML =
+        '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay movimientos registrados</td></tr>';
       return;
     }
 
-    tbody.innerHTML = movimientosFiltrados.map(movimiento => {
-      const fecha = new Date(movimiento.fecha);
-      const fechaFormateada = fecha.toLocaleString('es-ES');
+    tbody.innerHTML = movimientosFiltrados
+      .map((movimiento) => {
+        const fecha = new Date(movimiento.fecha);
+        const fechaFormateada = fecha.toLocaleString("es-ES");
 
-      const productosTexto = movimiento.productos ?
-        `${movimiento.productos.length} producto(s)` :
-        movimiento.productoNombre || 'N/A';
+        const productosTexto = movimiento.productos
+          ? `${movimiento.productos.length} producto(s)`
+          : movimiento.productoNombre || "N/A";
 
-      const clienteProveedor = movimiento.tipo === 'entrada' ?
-        (movimiento.proveedor || 'N/A') :
-        (movimiento.cliente || 'N/A');
+        const clienteProveedor =
+          movimiento.tipo === "entrada"
+            ? movimiento.proveedor || "N/A"
+            : movimiento.cliente || "N/A";
 
-      return `
+        return `
         <tr>
           <td>${fechaFormateada}</td>
-          <td><span class="status-badge ${movimiento.tipo}">${movimiento.tipo === 'entrada' ? 'Entrada' : 'Salida'}</span></td>
+          <td><span class="status-badge ${movimiento.tipo}">${
+          movimiento.tipo === "entrada" ? "Entrada" : "Salida"
+        }</span></td>
           <td>${productosTexto}</td>
           <td>${movimiento.usuario}</td>
           <td>${clienteProveedor}</td>
           <td>${movimiento.detalles}</td>
         </tr>
       `;
-    }).join('');
+      })
+      .join("");
   }
 
   inicializarFiltrosHistorial() {
-    const filterButtons = document.querySelectorAll('[data-filter].filter-btn');
+    const filterButtons = document.querySelectorAll("[data-filter].filter-btn");
 
-    filterButtons.forEach(button => {
-      button.addEventListener('click', (e) => {
+    filterButtons.forEach((button) => {
+      button.addEventListener("click", (e) => {
         const target = e.target;
-        const filter = target.getAttribute('data-filter');
+        const filter = target.getAttribute("data-filter");
 
-        filterButtons.forEach(btn => btn.classList.remove('active'));
-        target.classList.add('active');
+        filterButtons.forEach((btn) => btn.classList.remove("active"));
+        target.classList.add("active");
 
-        const searchInput = document.getElementById('search-historial');
-        this.renderizarHistorial(filter || 'todos', searchInput ? searchInput.value : '');
+        const searchInput = document.getElementById("search-historial");
+        this.renderizarHistorial(
+          filter || "todos",
+          searchInput ? searchInput.value : ""
+        );
       });
     });
   }
 
   inicializarBusquedaHistorial() {
-    const searchInput = document.getElementById('search-historial');
+    const searchInput = document.getElementById("search-historial");
     if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        const activeFilter = document.querySelector('[data-filter].filter-btn.active');
-        const filter = activeFilter ? activeFilter.getAttribute('data-filter') : 'todos';
-        this.renderizarHistorial(filter || 'todos', e.target.value);
+      searchInput.addEventListener("input", (e) => {
+        const activeFilter = document.querySelector(
+          "[data-filter].filter-btn.active"
+        );
+        const filter = activeFilter
+          ? activeFilter.getAttribute("data-filter")
+          : "todos";
+        this.renderizarHistorial(filter || "todos", e.target.value);
       });
     }
   }
@@ -1328,90 +1621,106 @@ class InventarioApp {
     this.renderizarCategorias();
     this.inicializarBusquedaCategorias();
     this.inicializarModalCategoria();
+    this.inicializarConfirmacionCategoria();
   }
 
-  renderizarCategorias(filtro = '') {
-    const tbody = document.getElementById('categorias-table');
+  renderizarCategorias(filtro = "") {
+    const tbody = document.getElementById("categorias-table");
     if (!tbody) return;
 
     const categoriasFiltradas = filtro
-      ? this.categorias.filter(c =>
-          c.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-          c.descripcion.toLowerCase().includes(filtro.toLowerCase())
+      ? this.categorias.filter(
+          (c) =>
+            c.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+            c.descripcion.toLowerCase().includes(filtro.toLowerCase())
         )
       : this.categorias;
 
     if (categoriasFiltradas.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay categorías registradas</td></tr>';
+      tbody.innerHTML =
+        '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay categorías registradas</td></tr>';
       return;
     }
 
-    tbody.innerHTML = categoriasFiltradas.map(categoria => {
-      const totalProductos = this.productos.filter(p => p.categoria === categoria.nombre).length;
-      return `
+    console.log(
+      "Renderizando categorías:",
+      this.categorias,
+      categoriasFiltradas
+    );
+
+    tbody.innerHTML = categoriasFiltradas
+      .map((categoria) => {
+        return `
         <tr>
-          <td>#${categoria.id}</td>
           <td>${categoria.nombre}</td>
+          <td>${categoria.codigo}</td>
           <td>${categoria.descripcion}</td>
-          <td>${totalProductos}</td>
-          <td><span class="status-badge ${categoria.activo ? 'activo' : 'inactivo'}">${categoria.activo ? 'Activo' : 'Inactivo'}</span></td>
+          <td>${categoria.cantidad_productos}</td>
+          <td><span class="status-badge ${
+            categoria.activo ? "activo" : "inactivo"
+          }">${categoria.activo ? "Activo" : "Inactivo"}</span></td>
           <td>
-            <button class="action-btn" onclick="app.editarCategoria('${categoria.id}')">Editar</button>
-            <button class="action-btn delete" onclick="app.eliminarCategoria('${categoria.id}')">Eliminar</button>
+            <button class="action-btn" onclick="app.editarCategoria('${
+              categoria.id
+            }')">Editar</button>
+            <button class="action-btn delete" onclick="app.eliminarCategoria('${
+              categoria.id
+            }')">Eliminar</button>
           </td>
         </tr>
       `;
-    }).join('');
+      })
+      .join("");
   }
 
   inicializarBusquedaCategorias() {
-    const searchInput = document.getElementById('search-categorias');
+    const searchInput = document.getElementById("search-categorias");
     if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
+      searchInput.addEventListener("input", (e) => {
         this.renderizarCategorias(e.target.value);
       });
     }
   }
 
   inicializarModalCategoria() {
-    const addCategoriaBtn = document.getElementById('add-categoria-btn');
-    const modal = document.getElementById('categoria-modal');
-    const modalClose = document.getElementById('categoria-modal-close');
-    const modalCancel = document.getElementById('categoria-modal-cancel');
-    const categoriaForm = document.getElementById('categoria-form');
+    const addCategoriaBtn = document.getElementById("add-categoria-btn");
+    const modal = document.getElementById("categoria-modal");
+    const modalClose = document.getElementById("categoria-modal-close");
+    const modalCancel = document.getElementById("categoria-modal-cancel");
+    const categoriaForm = document.getElementById("categoria-form");
 
     if (addCategoriaBtn) {
-      addCategoriaBtn.addEventListener('click', () => {
+      addCategoriaBtn.addEventListener("click", () => {
         this.editingCategoriaId = null;
         this.limpiarFormularioCategoria();
-        const modalTitle = document.getElementById('categoria-modal-title');
-        if (modalTitle) modalTitle.textContent = 'Añadir Categoría';
-        if (modal) modal.classList.add('show');
+        const modalTitle = document.getElementById("categoria-modal-title");
+        if (modalTitle) modalTitle.textContent = "Añadir Categoría";
+        if (modal) modal.classList.add("show");
       });
     }
 
     if (modalClose) {
-      modalClose.addEventListener('click', () => {
-        if (modal) modal.classList.remove('show');
+      modalClose.addEventListener("click", () => {
+        if (modal) modal.classList.remove("show");
       });
     }
 
     if (modalCancel) {
-      modalCancel.addEventListener('click', () => {
-        if (modal) modal.classList.remove('show');
+      modalCancel.addEventListener("click", () => {
+        if (modal) modal.classList.remove("show");
       });
     }
 
     if (modal) {
-      modal.addEventListener('click', (e) => {
+      modal.addEventListener("click", (e) => {
         if (e.target === modal) {
-          modal.classList.remove('show');
+          modal.classList.remove("show");
         }
       });
     }
 
     if (categoriaForm) {
-      categoriaForm.addEventListener('submit', (e) => {
+      categoriaForm.addEventListener("submit", (e) => {
         e.preventDefault();
         this.guardarCategoria();
       });
@@ -1419,103 +1728,180 @@ class InventarioApp {
   }
 
   editarCategoria(id) {
-    const categoria = this.categorias.find(c => c.id === id);
+    const categoria = this.categorias.find((c) => c.id === id);
     if (!categoria) return;
 
-    this.editingCategoriaId = id;
+    document.getElementById("categoria-id").value = categoria.id;
+    document.getElementById("categoria-nombre").value = categoria.nombre;
+    document.getElementById("categoria-codigo").value = categoria.codigo;
+    document.getElementById("categoria-descripcion").value =
+      categoria.descripcion;
 
-    document.getElementById('categoria-nombre').value = categoria.nombre;
-    document.getElementById('categoria-descripcion').value = categoria.descripcion;
+    const modalTitle = document.getElementById("categoria-modal-title");
+    if (modalTitle) modalTitle.textContent = "Editar Categoría";
 
-    const modalTitle = document.getElementById('categoria-modal-title');
-    if (modalTitle) modalTitle.textContent = 'Editar Categoría';
-
-    const modal = document.getElementById('categoria-modal');
-    if (modal) modal.classList.add('show');
+    const modal = document.getElementById("categoria-modal");
+    if (modal) modal.classList.add("show");
   }
 
   eliminarCategoria(id) {
-    const categoria = this.categorias.find(c => c.id === id);
+    const categoria = this.categorias.find((c) => c.id === id);
     if (!categoria) return;
 
-    const productosCategoria = this.productos.filter(p => p.categoria === categoria.nombre);
-    if (productosCategoria.length > 0) {
-      this.mostrarNotificacion(`No se puede eliminar la categoría porque tiene ${productosCategoria.length} productos asociados`, 'error');
-      return;
-    }
+    document.getElementById("confirmacion-id").value = categoria.id;
 
-    if (!confirm('¿Está seguro de eliminar esta categoría?')) return;
-
-    this.categorias = this.categorias.filter(c => c.id !== id);
-    this.guardarCategorias();
-    this.renderizarCategorias();
-    this.actualizarSelectsCategorias();
-    this.mostrarNotificacion('Categoría eliminada exitosamente', 'success');
+    const modal = document.getElementById("confirmacion-modal");
+    if (modal) modal.classList.add("show");
   }
 
-  guardarCategoria() {
-    const nombre = document.getElementById('categoria-nombre').value.trim();
-    const descripcion = document.getElementById('categoria-descripcion').value.trim();
+  inicializarConfirmacionCategoria() {
+    const modal = document.getElementById("confirmacion-modal");
+    const confirmarBtn = document.getElementById("confirmacion-confirm");
+    const closeBtn = document.getElementById("confirmacion-close");
+    const cancelarBtn = document.getElementById("confirmacion-cancel");
 
-    if (!nombre || !descripcion) {
-      this.mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+    if (cancelarBtn) {
+      cancelarBtn.onclick = () => {
+        modal.classList.remove("show");
+      };
+    }
+
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        modal.classList.remove("show");
+      };
+    }
+
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          modal.classList.remove("show");
+        }
+      });
+    }
+
+    if (confirmarBtn) {
+      confirmarBtn.onclick = async () => {
+        const data = new FormData();
+        const id = document.getElementById("confirmacion-id").value;
+        data.append("confirmacion-id", id);
+
+        const response = await fetch("categorias/eliminar", {
+          method: "POST",
+          body: data,
+        });
+
+        if (!response.ok) {
+          this.mostrarNotificacion("Error al eliminar la categoría", "error");
+          modal.classList.remove("show");
+          return;
+        }
+
+        this.mostrarNotificacion("Categoría eliminada exitosamente", "success");
+        this.cargarDatosCompletos().then(() => {
+          this.inicializarCategorias();
+          this.actualizarSelectsCategorias();
+        });
+      };
+    }
+
+    if (modal) modal.classList.remove("show");
+  }
+
+  async guardarCategoria() {
+    const id = document.getElementById("categoria-id").value;
+    const nombre = document.getElementById("categoria-nombre").value.trim();
+    const codigo = document.getElementById("categoria-codigo").value.trim();
+    const descripcion = document
+      .getElementById("categoria-descripcion")
+      .value.trim();
+
+    const data = new FormData();
+    data.append("categoria-nombre", nombre);
+    data.append("categoria-codigo", codigo);
+    data.append("categoria-descripcion", descripcion);
+    if (id) {
+      data.append("categoria-id", id);
+    }
+
+    console.log("Guardando categoría:", data);
+
+    if (!nombre || !codigo || !descripcion) {
+      this.mostrarNotificacion(
+        "Por favor complete todos los campos requeridos",
+        "error"
+      );
       return;
     }
 
-    if (this.editingCategoriaId) {
-      const categoria = this.categorias.find(c => c.id === this.editingCategoriaId);
-      if (categoria) {
-        const nombreAnterior = categoria.nombre;
-        categoria.nombre = nombre;
-        categoria.descripcion = descripcion;
+    if (!id) {
+      const response = await fetch("categorias/guardar", {
+        method: "POST",
+        body: data,
+      });
 
-        this.productos.forEach(producto => {
-          if (producto.categoria === nombreAnterior) {
-            producto.categoria = nombre;
-          }
+      if (!response.ok) {
+        this.mostrarNotificacion("Error al guardar la categoría", "error");
+        return;
+      }
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        this.mostrarNotificacion("Categoría guardada exitosamente", "success");
+        this.cargarDatosCompletos().then(() => {
+          this.inicializarCategorias();
+          this.actualizarSelectsCategorias();
         });
-        this.guardarProductos();
-
-        this.mostrarNotificacion('Categoría actualizada exitosamente', 'success');
       }
     } else {
-      const nuevaCategoria = {
-        id: Date.now().toString(),
-        nombre,
-        descripcion,
-        activo: true,
-        fechaRegistro: new Date().toISOString()
-      };
-      this.categorias.push(nuevaCategoria);
-      this.mostrarNotificacion('Categoría creada exitosamente', 'success');
+      const response = await fetch("categorias/actualizar", {
+        method: "POST",
+        body: data,
+      });
+
+      if (!response.ok) {
+        this.mostrarNotificacion("Error al actualizar la categoría", "error");
+        return;
+      }
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        this.mostrarNotificacion(
+          "Categoría actualizada exitosamente",
+          "success"
+        );
+        this.cargarDatosCompletos().then(() => {
+          this.inicializarCategorias();
+          this.actualizarSelectsCategorias();
+        });
+      }
     }
 
-    this.guardarCategorias();
-    this.renderizarCategorias();
-    this.actualizarSelectsCategorias();
-
-    const modal = document.getElementById('categoria-modal');
-    if (modal) modal.classList.remove('show');
+    const modal = document.getElementById("categoria-modal");
+    if (modal) modal.classList.remove("show");
     this.limpiarFormularioCategoria();
   }
 
   limpiarFormularioCategoria() {
-    const categoriaForm = document.getElementById('categoria-form');
+    const categoriaForm = document.getElementById("categoria-form");
     if (categoriaForm) {
       categoriaForm.reset();
     }
   }
 
   actualizarSelectsCategorias() {
-    const selects = document.querySelectorAll('.producto-categoria');
-    const categoriasActivas = this.categorias.filter(c => c.activo);
+    const selects = document.querySelectorAll(".producto-categoria");
+    const categoriasActivas = this.categorias.filter((c) => c.activo);
 
-    selects.forEach(select => {
+    selects.forEach((select) => {
       const currentValue = select.value;
-      select.innerHTML = '<option value="">Seleccionar categoría</option>' +
-        categoriasActivas.map(c =>
-          `<option value="${c.nombre}">${c.nombre}</option>`
-        ).join('');
+      select.innerHTML =
+        '<option value="">Seleccionar categoría</option>' +
+        categoriasActivas
+          .map((c) => `<option value="${c.nombre}">${c.nombre}</option>`)
+          .join("");
 
       if (currentValue) {
         select.value = currentValue;
@@ -1529,25 +1915,29 @@ class InventarioApp {
     this.inicializarModalProveedor();
   }
 
-  renderizarProveedores(filtro = '') {
-    const tbody = document.getElementById('proveedores-table');
+  renderizarProveedores(filtro = "") {
+    const tbody = document.getElementById("proveedores-table");
     if (!tbody) return;
 
     const proveedoresFiltrados = filtro
-      ? this.proveedores.filter(p =>
-          p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-          p.contacto.toLowerCase().includes(filtro.toLowerCase()) ||
-          p.email.toLowerCase().includes(filtro.toLowerCase()) ||
-          p.telefono.toLowerCase().includes(filtro.toLowerCase())
+      ? this.proveedores.filter(
+          (p) =>
+            p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+            p.contacto.toLowerCase().includes(filtro.toLowerCase()) ||
+            p.email.toLowerCase().includes(filtro.toLowerCase()) ||
+            p.telefono.toLowerCase().includes(filtro.toLowerCase())
         )
       : this.proveedores;
 
     if (proveedoresFiltrados.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay proveedores registrados</td></tr>';
+      tbody.innerHTML =
+        '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay proveedores registrados</td></tr>';
       return;
     }
 
-    tbody.innerHTML = proveedoresFiltrados.map(proveedor => `
+    tbody.innerHTML = proveedoresFiltrados
+      .map(
+        (proveedor) => `
       <tr>
         <td>#${proveedor.id}</td>
         <td>${proveedor.nombre}</td>
@@ -1555,63 +1945,71 @@ class InventarioApp {
         <td>${proveedor.email}</td>
         <td>${proveedor.telefono}</td>
         <td>${proveedor.direccion}</td>
-        <td><span class="status-badge ${proveedor.activo ? 'activo' : 'inactivo'}">${proveedor.activo ? 'Activo' : 'Inactivo'}</span></td>
+        <td><span class="status-badge ${
+          proveedor.activo ? "activo" : "inactivo"
+        }">${proveedor.activo ? "Activo" : "Inactivo"}</span></td>
         <td>
-          <button class="action-btn" onclick="app.editarProveedor('${proveedor.id}')">Editar</button>
-          <button class="action-btn delete" onclick="app.eliminarProveedor('${proveedor.id}')">Eliminar</button>
+          <button class="action-btn" onclick="app.editarProveedor('${
+            proveedor.id
+          }')">Editar</button>
+          <button class="action-btn delete" onclick="app.eliminarProveedor('${
+            proveedor.id
+          }')">Eliminar</button>
         </td>
       </tr>
-    `).join('');
+    `
+      )
+      .join("");
   }
 
   inicializarBusquedaProveedores() {
-    const searchInput = document.getElementById('search-proveedores');
+    const searchInput = document.getElementById("search-proveedores");
     if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
+      searchInput.addEventListener("input", (e) => {
         this.renderizarProveedores(e.target.value);
       });
     }
   }
 
   inicializarModalProveedor() {
-    const addProveedorBtn = document.getElementById('add-proveedor-btn');
-    const modal = document.getElementById('proveedor-modal');
-    const modalClose = document.getElementById('proveedor-modal-close');
-    const modalCancel = document.getElementById('proveedor-modal-cancel');
-    const proveedorForm = document.getElementById('proveedor-form');
+    const addProveedorBtn = document.getElementById("add-proveedor-btn");
+    const modal = document.getElementById("proveedor-modal");
+    const modalClose = document.getElementById("proveedor-modal-close");
+    const modalCancel = document.getElementById("proveedor-modal-cancel");
+    const proveedorForm = document.getElementById("proveedor-form");
 
     if (addProveedorBtn) {
-      addProveedorBtn.addEventListener('click', () => {
+      addProveedorBtn.addEventListener("click", () => {
         this.editingProveedorId = null;
         this.limpiarFormularioProveedor();
-        const modalTitle = document.getElementById('proveedor-modal-title');
-        if (modalTitle) modalTitle.textContent = 'Añadir Proveedor';
-        if (modal) modal.classList.add('show');
+        const modalTitle = document.getElementById("proveedor-modal-title");
+        if (modalTitle) modalTitle.textContent = "Añadir Proveedor";
+        if (modal) modal.classList.add("show");
       });
     }
 
     if (modalClose) {
-      modalClose.addEventListener('click', () => {
-        if (modal) modal.classList.remove('show');
+      modalClose.addEventListener("click", () => {
+        if (modal) modal.classList.remove("show");
       });
     }
 
     if (modalCancel) {
-      modalCancel.addEventListener('click', () => {
-        if (modal) modal.classList.remove('show');
+      modalCancel.addEventListener("click", () => {
+        if (modal) modal.classList.remove("show");
       });
     }
 
     if (modal) {
-      modal.addEventListener('click', (e) => {
+      modal.addEventListener("click", (e) => {
         if (e.target === modal) {
-          modal.classList.remove('show');
+          modal.classList.remove("show");
         }
       });
     }
 
     if (proveedorForm) {
-      proveedorForm.addEventListener('submit', (e) => {
+      proveedorForm.addEventListener("submit", (e) => {
         e.preventDefault();
         this.guardarProveedor();
       });
@@ -1619,59 +2017,71 @@ class InventarioApp {
   }
 
   editarProveedor(id) {
-    const proveedor = this.proveedores.find(p => p.id === id);
+    const proveedor = this.proveedores.find((p) => p.id === id);
     if (!proveedor) return;
 
     this.editingProveedorId = id;
 
-    document.getElementById('proveedor-nombre').value = proveedor.nombre;
-    document.getElementById('proveedor-contacto').value = proveedor.contacto;
-    document.getElementById('proveedor-email').value = proveedor.email;
-    document.getElementById('proveedor-telefono').value = proveedor.telefono;
-    document.getElementById('proveedor-direccion').value = proveedor.direccion;
-    document.getElementById('proveedor-notas').value = proveedor.notas || '';
+    document.getElementById("proveedor-nombre").value = proveedor.nombre;
+    document.getElementById("proveedor-contacto").value = proveedor.contacto;
+    document.getElementById("proveedor-email").value = proveedor.email;
+    document.getElementById("proveedor-telefono").value = proveedor.telefono;
+    document.getElementById("proveedor-direccion").value = proveedor.direccion;
+    document.getElementById("proveedor-notas").value = proveedor.notas || "";
 
-    const modalTitle = document.getElementById('proveedor-modal-title');
-    if (modalTitle) modalTitle.textContent = 'Editar Proveedor';
+    const modalTitle = document.getElementById("proveedor-modal-title");
+    if (modalTitle) modalTitle.textContent = "Editar Proveedor";
 
-    const modal = document.getElementById('proveedor-modal');
-    if (modal) modal.classList.add('show');
+    const modal = document.getElementById("proveedor-modal");
+    if (modal) modal.classList.add("show");
   }
 
   eliminarProveedor(id) {
-    const proveedor = this.proveedores.find(p => p.id === id);
+    const proveedor = this.proveedores.find((p) => p.id === id);
     if (!proveedor) return;
 
-    const productosProveedor = this.productos.filter(p => p.proveedor === proveedor.nombre);
+    const productosProveedor = this.productos.filter(
+      (p) => p.proveedor === proveedor.nombre
+    );
     if (productosProveedor.length > 0) {
-      this.mostrarNotificacion(`No se puede eliminar el proveedor porque tiene ${productosProveedor.length} productos asociados`, 'error');
+      this.mostrarNotificacion(
+        `No se puede eliminar el proveedor porque tiene ${productosProveedor.length} productos asociados`,
+        "error"
+      );
       return;
     }
 
-    if (!confirm('¿Está seguro de eliminar este proveedor?')) return;
+    if (!confirm("¿Está seguro de eliminar este proveedor?")) return;
 
-    this.proveedores = this.proveedores.filter(p => p.id !== id);
+    this.proveedores = this.proveedores.filter((p) => p.id !== id);
     this.guardarProveedores();
     this.renderizarProveedores();
     this.actualizarSelectsProveedores();
-    this.mostrarNotificacion('Proveedor eliminado exitosamente', 'success');
+    this.mostrarNotificacion("Proveedor eliminado exitosamente", "success");
   }
 
   guardarProveedor() {
-    const nombre = document.getElementById('proveedor-nombre').value.trim();
-    const contacto = document.getElementById('proveedor-contacto').value.trim();
-    const email = document.getElementById('proveedor-email').value.trim();
-    const telefono = document.getElementById('proveedor-telefono').value.trim();
-    const direccion = document.getElementById('proveedor-direccion').value.trim();
-    const notas = document.getElementById('proveedor-notas').value.trim();
+    const nombre = document.getElementById("proveedor-nombre").value.trim();
+    const contacto = document.getElementById("proveedor-contacto").value.trim();
+    const email = document.getElementById("proveedor-email").value.trim();
+    const telefono = document.getElementById("proveedor-telefono").value.trim();
+    const direccion = document
+      .getElementById("proveedor-direccion")
+      .value.trim();
+    const notas = document.getElementById("proveedor-notas").value.trim();
 
     if (!nombre || !contacto || !email || !telefono || !direccion) {
-      this.mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+      this.mostrarNotificacion(
+        "Por favor complete todos los campos requeridos",
+        "error"
+      );
       return;
     }
 
     if (this.editingProveedorId) {
-      const proveedor = this.proveedores.find(p => p.id === this.editingProveedorId);
+      const proveedor = this.proveedores.find(
+        (p) => p.id === this.editingProveedorId
+      );
       if (proveedor) {
         const nombreAnterior = proveedor.nombre;
         proveedor.nombre = nombre;
@@ -1681,14 +2091,17 @@ class InventarioApp {
         proveedor.direccion = direccion;
         proveedor.notas = notas;
 
-        this.productos.forEach(producto => {
+        this.productos.forEach((producto) => {
           if (producto.proveedor === nombreAnterior) {
             producto.proveedor = nombre;
           }
         });
         this.guardarProductos();
 
-        this.mostrarNotificacion('Proveedor actualizado exitosamente', 'success');
+        this.mostrarNotificacion(
+          "Proveedor actualizado exitosamente",
+          "success"
+        );
       }
     } else {
       const nuevoProveedor = {
@@ -1700,39 +2113,40 @@ class InventarioApp {
         direccion,
         notas,
         activo: true,
-        fechaRegistro: new Date().toISOString()
+        fechaRegistro: new Date().toISOString(),
       };
       this.proveedores.push(nuevoProveedor);
-      this.mostrarNotificacion('Proveedor creado exitosamente', 'success');
+      this.mostrarNotificacion("Proveedor creado exitosamente", "success");
     }
 
     this.guardarProveedores();
     this.renderizarProveedores();
     this.actualizarSelectsProveedores();
 
-    const modal = document.getElementById('proveedor-modal');
-    if (modal) modal.classList.remove('show');
+    const modal = document.getElementById("proveedor-modal");
+    if (modal) modal.classList.remove("show");
     this.limpiarFormularioProveedor();
   }
 
   limpiarFormularioProveedor() {
-    const proveedorForm = document.getElementById('proveedor-form');
+    const proveedorForm = document.getElementById("proveedor-form");
     if (proveedorForm) {
       proveedorForm.reset();
     }
   }
 
   actualizarSelectsProveedores() {
-    const inputs = document.querySelectorAll('.producto-proveedor');
-    const proveedoresActivos = this.proveedores.filter(p => p.activo);
+    const inputs = document.querySelectorAll(".producto-proveedor");
+    const proveedoresActivos = this.proveedores.filter((p) => p.activo);
 
-    inputs.forEach(input => {
-      if (input.tagName === 'SELECT') {
+    inputs.forEach((input) => {
+      if (input.tagName === "SELECT") {
         const currentValue = input.value;
-        input.innerHTML = '<option value="">Seleccionar proveedor</option>' +
-          proveedoresActivos.map(p =>
-            `<option value="${p.nombre}">${p.nombre}</option>`
-          ).join('');
+        input.innerHTML =
+          '<option value="">Seleccionar proveedor</option>' +
+          proveedoresActivos
+            .map((p) => `<option value="${p.nombre}">${p.nombre}</option>`)
+            .join("");
 
         if (currentValue) {
           input.value = currentValue;
@@ -1747,87 +2161,99 @@ class InventarioApp {
     this.inicializarModalCliente();
   }
 
-  renderizarClientes(filtro = '') {
-    const tbody = document.getElementById('clientes-table');
+  renderizarClientes(filtro = "") {
+    const tbody = document.getElementById("clientes-table");
     if (!tbody) return;
 
     const clientesFiltrados = filtro
-      ? this.clientes.filter(c =>
-          c.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-          c.email.toLowerCase().includes(filtro.toLowerCase()) ||
-          c.telefono.toLowerCase().includes(filtro.toLowerCase())
+      ? this.clientes.filter(
+          (c) =>
+            c.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+            c.email.toLowerCase().includes(filtro.toLowerCase()) ||
+            c.telefono.toLowerCase().includes(filtro.toLowerCase())
         )
       : this.clientes;
 
     if (clientesFiltrados.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay clientes registrados</td></tr>';
+      tbody.innerHTML =
+        '<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay clientes registrados</td></tr>';
       return;
     }
 
-    tbody.innerHTML = clientesFiltrados.map(cliente => `
+    tbody.innerHTML = clientesFiltrados
+      .map(
+        (cliente) => `
       <tr>
         <td>#${cliente.id}</td>
         <td>${cliente.nombre}</td>
         <td>${cliente.email}</td>
         <td>${cliente.telefono}</td>
         <td>${cliente.direccion}</td>
-        <td><span class="status-badge ${cliente.activo ? 'activo' : 'inactivo'}">${cliente.activo ? 'Activo' : 'Inactivo'}</span></td>
+        <td><span class="status-badge ${
+          cliente.activo ? "activo" : "inactivo"
+        }">${cliente.activo ? "Activo" : "Inactivo"}</span></td>
         <td>
-          <button class="action-btn" onclick="app.editarCliente('${cliente.id}')">Editar</button>
-          <button class="action-btn delete" onclick="app.eliminarCliente('${cliente.id}')">Eliminar</button>
+          <button class="action-btn" onclick="app.editarCliente('${
+            cliente.id
+          }')">Editar</button>
+          <button class="action-btn delete" onclick="app.eliminarCliente('${
+            cliente.id
+          }')">Eliminar</button>
         </td>
       </tr>
-    `).join('');
+    `
+      )
+      .join("");
   }
 
   inicializarBusquedaClientes() {
-    const searchInput = document.getElementById('search-clientes');
+    const searchInput = document.getElementById("search-clientes");
     if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
+      searchInput.addEventListener("input", (e) => {
         this.renderizarClientes(e.target.value);
       });
     }
   }
 
   inicializarModalCliente() {
-    const addClienteBtn = document.getElementById('add-cliente-btn');
-    const modal = document.getElementById('cliente-modal');
-    const modalClose = document.getElementById('cliente-modal-close');
-    const modalCancel = document.getElementById('cliente-modal-cancel');
-    const clienteForm = document.getElementById('cliente-form');
+    const addClienteBtn = document.getElementById("add-cliente-btn");
+    const modal = document.getElementById("cliente-modal");
+    const modalClose = document.getElementById("cliente-modal-close");
+    const modalCancel = document.getElementById("cliente-modal-cancel");
+    const clienteForm = document.getElementById("cliente-form");
 
     if (addClienteBtn) {
-      addClienteBtn.addEventListener('click', () => {
+      addClienteBtn.addEventListener("click", () => {
         this.editingClienteId = null;
         this.limpiarFormularioCliente();
-        const modalTitle = document.getElementById('cliente-modal-title');
-        if (modalTitle) modalTitle.textContent = 'Añadir Cliente';
-        if (modal) modal.classList.add('show');
+        const modalTitle = document.getElementById("cliente-modal-title");
+        if (modalTitle) modalTitle.textContent = "Añadir Cliente";
+        if (modal) modal.classList.add("show");
       });
     }
 
     if (modalClose) {
-      modalClose.addEventListener('click', () => {
-        if (modal) modal.classList.remove('show');
+      modalClose.addEventListener("click", () => {
+        if (modal) modal.classList.remove("show");
       });
     }
 
     if (modalCancel) {
-      modalCancel.addEventListener('click', () => {
-        if (modal) modal.classList.remove('show');
+      modalCancel.addEventListener("click", () => {
+        if (modal) modal.classList.remove("show");
       });
     }
 
     if (modal) {
-      modal.addEventListener('click', (e) => {
+      modal.addEventListener("click", (e) => {
         if (e.target === modal) {
-          modal.classList.remove('show');
+          modal.classList.remove("show");
         }
       });
     }
 
     if (clienteForm) {
-      clienteForm.addEventListener('submit', (e) => {
+      clienteForm.addEventListener("submit", (e) => {
         e.preventDefault();
         this.guardarCliente();
       });
@@ -1835,55 +2261,58 @@ class InventarioApp {
   }
 
   editarCliente(id) {
-    const cliente = this.clientes.find(c => c.id === id);
+    const cliente = this.clientes.find((c) => c.id === id);
     if (!cliente) return;
 
     this.editingClienteId = id;
 
-    document.getElementById('cliente-nombre').value = cliente.nombre;
-    document.getElementById('cliente-email').value = cliente.email;
-    document.getElementById('cliente-telefono').value = cliente.telefono;
-    document.getElementById('cliente-direccion').value = cliente.direccion;
-    document.getElementById('cliente-notas').value = cliente.notas || '';
+    document.getElementById("cliente-nombre").value = cliente.nombre;
+    document.getElementById("cliente-email").value = cliente.email;
+    document.getElementById("cliente-telefono").value = cliente.telefono;
+    document.getElementById("cliente-direccion").value = cliente.direccion;
+    document.getElementById("cliente-notas").value = cliente.notas || "";
 
-    const modalTitle = document.getElementById('cliente-modal-title');
-    if (modalTitle) modalTitle.textContent = 'Editar Cliente';
+    const modalTitle = document.getElementById("cliente-modal-title");
+    if (modalTitle) modalTitle.textContent = "Editar Cliente";
 
-    const modal = document.getElementById('cliente-modal');
-    if (modal) modal.classList.add('show');
+    const modal = document.getElementById("cliente-modal");
+    if (modal) modal.classList.add("show");
   }
 
   eliminarCliente(id) {
-    if (!confirm('¿Está seguro de eliminar este cliente?')) return;
+    if (!confirm("¿Está seguro de eliminar este cliente?")) return;
 
-    this.clientes = this.clientes.filter(c => c.id !== id);
+    this.clientes = this.clientes.filter((c) => c.id !== id);
     this.guardarClientes();
     this.renderizarClientes();
     this.actualizarSelectClientes();
-    this.mostrarNotificacion('Cliente eliminado exitosamente', 'success');
+    this.mostrarNotificacion("Cliente eliminado exitosamente", "success");
   }
 
   guardarCliente() {
-    const nombre = document.getElementById('cliente-nombre').value.trim();
-    const email = document.getElementById('cliente-email').value.trim();
-    const telefono = document.getElementById('cliente-telefono').value.trim();
-    const direccion = document.getElementById('cliente-direccion').value.trim();
-    const notas = document.getElementById('cliente-notas').value.trim();
+    const nombre = document.getElementById("cliente-nombre").value.trim();
+    const email = document.getElementById("cliente-email").value.trim();
+    const telefono = document.getElementById("cliente-telefono").value.trim();
+    const direccion = document.getElementById("cliente-direccion").value.trim();
+    const notas = document.getElementById("cliente-notas").value.trim();
 
     if (!nombre || !email || !telefono || !direccion) {
-      this.mostrarNotificacion('Por favor complete todos los campos requeridos', 'error');
+      this.mostrarNotificacion(
+        "Por favor complete todos los campos requeridos",
+        "error"
+      );
       return;
     }
 
     if (this.editingClienteId) {
-      const cliente = this.clientes.find(c => c.id === this.editingClienteId);
+      const cliente = this.clientes.find((c) => c.id === this.editingClienteId);
       if (cliente) {
         cliente.nombre = nombre;
         cliente.email = email;
         cliente.telefono = telefono;
         cliente.direccion = direccion;
         cliente.notas = notas;
-        this.mostrarNotificacion('Cliente actualizado exitosamente', 'success');
+        this.mostrarNotificacion("Cliente actualizado exitosamente", "success");
       }
     } else {
       const nuevoCliente = {
@@ -1894,23 +2323,23 @@ class InventarioApp {
         direccion,
         notas,
         activo: true,
-        fechaRegistro: new Date().toISOString()
+        fechaRegistro: new Date().toISOString(),
       };
       this.clientes.push(nuevoCliente);
-      this.mostrarNotificacion('Cliente creado exitosamente', 'success');
+      this.mostrarNotificacion("Cliente creado exitosamente", "success");
     }
 
     this.guardarClientes();
     this.renderizarClientes();
     this.actualizarSelectClientes();
 
-    const modal = document.getElementById('cliente-modal');
-    if (modal) modal.classList.remove('show');
+    const modal = document.getElementById("cliente-modal");
+    if (modal) modal.classList.remove("show");
     this.limpiarFormularioCliente();
   }
 
   limpiarFormularioCliente() {
-    const clienteForm = document.getElementById('cliente-form');
+    const clienteForm = document.getElementById("cliente-form");
     if (clienteForm) {
       clienteForm.reset();
     }
@@ -1922,80 +2351,93 @@ class InventarioApp {
     this.inicializarModalUsuario();
   }
 
-  renderizarUsuarios(filtro = '') {
-    const tbody = document.getElementById('usuarios-table');
+  renderizarUsuarios(filtro = "") {
+    const tbody = document.getElementById("usuarios-table");
     if (!tbody) return;
 
     const usuariosFiltrados = filtro
-      ? this.usuarios.filter(u =>
-          u.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-          u.email.toLowerCase().includes(filtro.toLowerCase())
+      ? this.usuarios.filter(
+          (u) =>
+            u.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+            u.email.toLowerCase().includes(filtro.toLowerCase())
         )
       : this.usuarios;
 
-    tbody.innerHTML = usuariosFiltrados.map(usuario => `
+    tbody.innerHTML = usuariosFiltrados
+      .map(
+        (usuario) => `
       <tr>
         <td>#${usuario.id}</td>
         <td>${usuario.nombre}</td>
         <td>${usuario.email}</td>
-        <td><span class="role-badge ${usuario.rol}">${usuario.rol === 'admin' ? 'Administrador' : 'Usuario'}</span></td>
-        <td><span class="status-badge ${usuario.activo ? 'activo' : 'inactivo'}">${usuario.activo ? 'Activo' : 'Inactivo'}</span></td>
+        <td><span class="role-badge ${usuario.rol}">${
+          usuario.rol === "admin" ? "Administrador" : "Usuario"
+        }</span></td>
+        <td><span class="status-badge ${
+          usuario.activo ? "activo" : "inactivo"
+        }">${usuario.activo ? "Activo" : "Inactivo"}</span></td>
         <td>
-          <button class="action-btn" onclick="app.editarUsuario('${usuario.id}')">Editar</button>
-          <button class="action-btn delete" onclick="app.eliminarUsuario('${usuario.id}')">Eliminar</button>
+          <button class="action-btn" onclick="app.editarUsuario('${
+            usuario.id
+          }')">Editar</button>
+          <button class="action-btn delete" onclick="app.eliminarUsuario('${
+            usuario.id
+          }')">Eliminar</button>
         </td>
       </tr>
-    `).join('');
+    `
+      )
+      .join("");
   }
 
   inicializarBusquedaUsuarios() {
-    const searchInput = document.getElementById('search-usuarios');
+    const searchInput = document.getElementById("search-usuarios");
     if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
+      searchInput.addEventListener("input", (e) => {
         this.renderizarUsuarios(e.target.value);
       });
     }
   }
 
   inicializarModalUsuario() {
-    const addUserBtn = document.getElementById('add-user-btn');
-    const modal = document.getElementById('user-modal');
-    const modalClose = document.getElementById('modal-close');
-    const modalCancel = document.getElementById('modal-cancel');
-    const userForm = document.getElementById('user-form');
+    const addUserBtn = document.getElementById("add-user-btn");
+    const modal = document.getElementById("user-modal");
+    const modalClose = document.getElementById("modal-close");
+    const modalCancel = document.getElementById("modal-cancel");
+    const userForm = document.getElementById("user-form");
 
     if (addUserBtn) {
-      addUserBtn.addEventListener('click', () => {
+      addUserBtn.addEventListener("click", () => {
         this.editingUserId = null;
         this.limpiarFormularioUsuario();
-        const modalTitle = document.getElementById('modal-title');
-        if (modalTitle) modalTitle.textContent = 'Añadir Usuario';
-        if (modal) modal.classList.add('show');
+        const modalTitle = document.getElementById("modal-title");
+        if (modalTitle) modalTitle.textContent = "Añadir Usuario";
+        if (modal) modal.classList.add("show");
       });
     }
 
     if (modalClose) {
-      modalClose.addEventListener('click', () => {
-        if (modal) modal.classList.remove('show');
+      modalClose.addEventListener("click", () => {
+        if (modal) modal.classList.remove("show");
       });
     }
 
     if (modalCancel) {
-      modalCancel.addEventListener('click', () => {
-        if (modal) modal.classList.remove('show');
+      modalCancel.addEventListener("click", () => {
+        if (modal) modal.classList.remove("show");
       });
     }
 
     if (modal) {
-      modal.addEventListener('click', (e) => {
+      modal.addEventListener("click", (e) => {
         if (e.target === modal) {
-          modal.classList.remove('show');
+          modal.classList.remove("show");
         }
       });
     }
 
     if (userForm) {
-      userForm.addEventListener('submit', (e) => {
+      userForm.addEventListener("submit", (e) => {
         e.preventDefault();
         this.guardarUsuario();
       });
@@ -2003,101 +2445,205 @@ class InventarioApp {
   }
 
   editarUsuario(id) {
-    const usuario = this.usuarios.find(u => u.id === id);
+    const usuario = this.usuarios.find((u) => u.id === id);
     if (!usuario) return;
 
     this.editingUserId = id;
 
-    document.getElementById('user-nombre').value = usuario.nombre;
-    document.getElementById('user-email').value = usuario.email;
-    document.getElementById('user-rol').value = usuario.rol;
-    document.getElementById('user-password').value = usuario.password;
+    document.getElementById("user-nombre").value = usuario.nombre;
+    document.getElementById("user-email").value = usuario.email;
+    document.getElementById("user-rol").value = usuario.rol;
+    document.getElementById("user-password").value = usuario.password;
 
-    const modalTitle = document.getElementById('modal-title');
-    if (modalTitle) modalTitle.textContent = 'Editar Usuario';
+    const modalTitle = document.getElementById("modal-title");
+    if (modalTitle) modalTitle.textContent = "Editar Usuario";
 
-    const modal = document.getElementById('user-modal');
-    if (modal) modal.classList.add('show');
+    const modal = document.getElementById("user-modal");
+    if (modal) modal.classList.add("show");
   }
 
   eliminarUsuario(id) {
-    if (!confirm('¿Está seguro de eliminar este usuario?')) return;
+    if (!confirm("¿Está seguro de eliminar este usuario?")) return;
 
-    this.usuarios = this.usuarios.filter(u => u.id !== id);
+    this.usuarios = this.usuarios.filter((u) => u.id !== id);
     this.guardarUsuarios();
     this.renderizarUsuarios();
-    this.mostrarNotificacion('Usuario eliminado exitosamente', 'success');
+    this.mostrarNotificacion("Usuario eliminado exitosamente", "success");
   }
 
   guardarUsuario() {
-    const nombre = document.getElementById('user-nombre').value;
-    const email = document.getElementById('user-email').value;
-    const rol = document.getElementById('user-rol').value;
-    const password = document.getElementById('user-password').value;
+    const nombre = document.getElementById("user-nombre").value;
+    const email = document.getElementById("user-email").value;
+    const rol = document.getElementById("user-rol").value;
+    const password = document.getElementById("user-password").value;
 
     if (this.editingUserId) {
-      const usuario = this.usuarios.find(u => u.id === this.editingUserId);
+      const usuario = this.usuarios.find((u) => u.id === this.editingUserId);
       if (usuario) {
         usuario.nombre = nombre;
         usuario.email = email;
         usuario.rol = rol;
         usuario.password = password;
-        this.mostrarNotificacion('Usuario actualizado exitosamente', 'success');
+        this.mostrarNotificacion("Usuario actualizado exitosamente", "success");
       }
     } else {
       const nuevoUsuario = {
         id: Date.now().toString(),
         nombre,
         email,
-        telefono: '',
+        telefono: "",
         password,
         rol,
         activo: true,
-        fechaRegistro: new Date().toISOString()
+        fechaRegistro: new Date().toISOString(),
       };
       this.usuarios.push(nuevoUsuario);
-      this.mostrarNotificacion('Usuario creado exitosamente', 'success');
+      this.mostrarNotificacion("Usuario creado exitosamente", "success");
     }
 
     this.guardarUsuarios();
     this.renderizarUsuarios();
 
-    const modal = document.getElementById('user-modal');
-    if (modal) modal.classList.remove('show');
+    const modal = document.getElementById("user-modal");
+    if (modal) modal.classList.remove("show");
     this.limpiarFormularioUsuario();
   }
 
   limpiarFormularioUsuario() {
-    const userForm = document.getElementById('user-form');
+    const userForm = document.getElementById("user-form");
     if (userForm) {
       userForm.reset();
     }
   }
 
   inicializarPerfil() {
-    const profileForm = document.getElementById('profile-form');
+    const profileForm = document.getElementById("profile-form");
+    const patternClearBtn = document.getElementById("clear-pattern-btn");
+    const patternVerifyBtn = document.getElementById("verify-pattern-btn");
+
+    if (patternClearBtn) {
+      console.log("Inicializando botón de limpiar patrón");
+      patternClearBtn.addEventListener("click", () => this.clearPattern());
+    }
+
+    if (patternVerifyBtn) {
+      console.log("Inicializando botón de verificar patrón");
+      patternVerifyBtn.addEventListener("click", () => this.verifyPattern());
+    }
 
     if (profileForm) {
-      profileForm.addEventListener('submit', (e) => {
+      profileForm.addEventListener("submit", (e) => {
         e.preventDefault();
         this.guardarPerfil();
       });
     }
 
     this.cargarDatosPerfil();
+    this.initializePatternGrid();
+  }
+
+  methods = {
+    pattern: {
+      name: "Patrón de Desbloqueo",
+      icon: "fa-draw-polygon",
+      selectedDots: [],
+      originalPattern: [1, 2, 5, 8, 7, 4], // Ejemplo
+    },
+  };
+
+  initializePatternGrid() {
+    const grid = document.getElementById("patternGrid");
+    grid.innerHTML = "";
+
+    for (let i = 1; i <= 9; i++) {
+      const dot = document.createElement("div");
+      dot.className = "pattern-dot";
+      dot.dataset.id = i;
+      dot.textContent = i;
+      dot.addEventListener("click", () => this.selectDot(i));
+      grid.appendChild(dot);
+    }
+  }
+
+  selectDot(dotId) {
+    const dots = this.methods.pattern.selectedDots;
+    if (!dots.includes(dotId)) {
+      dots.push(dotId);
+      document
+        .querySelector(`.pattern-dot[data-id="${dotId}"]`)
+        .classList.add("selected");
+    }
+  }
+
+  clearPattern() {
+    this.methods.pattern.selectedDots = [];
+    document.querySelectorAll(".pattern-dot").forEach((dot) => {
+      dot.classList.remove("selected");
+    });
+    document.getElementById("patternError").style.display = "none";
+  }
+
+  verifyPattern() {
+    const pattern = this.methods.pattern.selectedDots.join("");
+    const original = this.methods.pattern.originalPattern.join("");
+    const patternModal = document.getElementById("pattern-confirmacion");
+
+    patternModal.classList.add("show");
+
+    const patternModalClose = document.getElementById(
+      "pattern-confirmacion-close"
+    );
+    const patternModalCancel = document.getElementById(
+      "pattern-confirmacion-cancel"
+    );
+    const patternModalVerify = document.getElementById(
+      "pattern-confirmacion-verify"
+    );
+
+    patternModalClose.addEventListener("click", () => {
+      patternModal.classList.remove("show");
+    });
+
+    patternModalCancel.addEventListener("click", () => {
+      patternModal.classList.remove("show");
+    });
+
+    patternModalVerify.addEventListener("click", () => {
+      if (pattern === original && pattern.length >= 4) {
+        this.mostrarNotificacion(
+          "Patrón correcto. Acceso concedido.",
+          "success"
+        );
+        setTimeout(() => {
+          this.clearPattern();
+        }, 2000);
+        // Aquí proceder con la recuperación
+      } else {
+        this.mostrarNotificacion(
+          "Patrón incorrecto. Inténtalo de nuevo.",
+          "error"
+        );
+        setTimeout(() => {
+          patternModal.classList.remove("show");
+          this.clearPattern();
+        }, 2000);
+      }
+    });
   }
 
   cargarDatosPerfil() {
     if (!this.usuarioActual) return;
 
-    const profileAvatar = document.getElementById('profile-avatar');
-    const profileName = document.getElementById('profile-name');
-    const profileEmail = document.getElementById('profile-email');
-    const profileMovimientos = document.getElementById('profile-movimientos');
-    const profileFecha = document.getElementById('profile-fecha');
+    const profileAvatar = document.getElementById("profile-avatar");
+    const profileName = document.getElementById("profile-name");
+    const profileEmail = document.getElementById("profile-email");
+    const profileMovimientos = document.getElementById("profile-movimientos");
+    const profileFecha = document.getElementById("profile-fecha");
 
     if (profileAvatar) {
-      profileAvatar.textContent = this.usuarioActual.nombre.charAt(0).toUpperCase();
+      profileAvatar.textContent = this.usuarioActual.nombre
+        .charAt(0)
+        .toUpperCase();
     }
 
     if (profileName) {
@@ -2109,27 +2655,31 @@ class InventarioApp {
     }
 
     if (profileMovimientos) {
-      const movimientosUsuario = this.movimientos.filter(m => m.usuario === this.usuarioActual.nombre);
+      const movimientosUsuario = this.movimientos.filter(
+        (m) => m.usuario === this.usuarioActual.nombre
+      );
       profileMovimientos.textContent = movimientosUsuario.length.toString();
     }
 
     if (profileFecha) {
       const fecha = new Date(this.usuarioActual.fechaRegistro);
-      profileFecha.textContent = fecha.toLocaleDateString('es-ES');
+      profileFecha.textContent = fecha.toLocaleDateString("es-ES");
     }
 
-    document.getElementById('profile-nombre').value = this.usuarioActual.nombre;
-    document.getElementById('profile-email-input').value = this.usuarioActual.email;
-    document.getElementById('profile-telefono').value = this.usuarioActual.telefono || '';
+    document.getElementById("profile-nombre").value = this.usuarioActual.nombre;
+    document.getElementById("profile-email-input").value =
+      this.usuarioActual.email;
+    document.getElementById("profile-telefono").value =
+      this.usuarioActual.telefono || "";
   }
 
   guardarPerfil() {
     if (!this.usuarioActual) return;
 
-    const nombre = document.getElementById('profile-nombre').value;
-    const email = document.getElementById('profile-email-input').value;
-    const telefono = document.getElementById('profile-telefono').value;
-    const password = document.getElementById('profile-password').value;
+    const nombre = document.getElementById("profile-nombre").value;
+    const email = document.getElementById("profile-email-input").value;
+    const telefono = document.getElementById("profile-telefono").value;
+    const password = document.getElementById("profile-password").value;
 
     this.usuarioActual.nombre = nombre;
     this.usuarioActual.email = email;
@@ -2139,32 +2689,34 @@ class InventarioApp {
       this.usuarioActual.password = password;
     }
 
-    const usuarioIndex = this.usuarios.findIndex(u => u.id === this.usuarioActual.id);
+    const usuarioIndex = this.usuarios.findIndex(
+      (u) => u.id === this.usuarioActual.id
+    );
     if (usuarioIndex !== -1) {
       this.usuarios[usuarioIndex] = this.usuarioActual;
       this.guardarUsuarios();
     }
 
-    localStorage.setItem('usuarioActual', JSON.stringify(this.usuarioActual));
+    localStorage.setItem("usuarioActual", JSON.stringify(this.usuarioActual));
     this.actualizarInfoUsuario();
     this.cargarDatosPerfil();
-    this.mostrarNotificacion('Perfil actualizado exitosamente', 'success');
+    this.mostrarNotificacion("Perfil actualizado exitosamente", "success");
 
-    const passwordInput = document.getElementById('profile-password');
+    const passwordInput = document.getElementById("profile-password");
     if (passwordInput) {
-      passwordInput.value = '';
+      passwordInput.value = "";
     }
   }
 
   mostrarNotificacion(mensaje, tipo) {
-    const notification = document.getElementById('notification');
+    const notification = document.getElementById("notification");
     if (!notification) return;
 
     notification.textContent = mensaje;
     notification.className = `notification show ${tipo}`;
 
     setTimeout(() => {
-      notification.classList.remove('show');
+      notification.classList.remove("show");
     }, 3000);
   }
 }
