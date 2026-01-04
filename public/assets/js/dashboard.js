@@ -149,8 +149,6 @@ class InventarioApp {
 
   guardarClientes(clientes) {}
 
-  guardarProveedores(proveedores) {}
-
   inicializar() {
     this.inicializarTema();
     this.inicializarNavegacion();
@@ -2054,7 +2052,6 @@ class InventarioApp {
     if (!confirm("¿Está seguro de eliminar este proveedor?")) return;
 
     this.proveedores = this.proveedores.filter((p) => p.id !== id);
-    this.guardarProveedores();
     this.renderizarProveedores();
     this.actualizarSelectsProveedores();
     this.mostrarNotificacion("Proveedor eliminado exitosamente", "success");
@@ -2119,7 +2116,6 @@ class InventarioApp {
       this.mostrarNotificacion("Proveedor creado exitosamente", "success");
     }
 
-    this.guardarProveedores();
     this.renderizarProveedores();
     this.actualizarSelectsProveedores();
 
