@@ -9,16 +9,9 @@ class HomeController
     public function __construct()
     {
         $this->model = new HomeModel();
-        //session_start();
-        // Permitir acceso a logout aunque la sesión esté activa
-        /*$uri = $_SERVER['REQUEST_URI'] ?? '';
-        $isLogout = (strpos($uri, '/logout') !== false);
-        if (isset($_SESSION['usuario']) && !$isLogout) {
-            header('Location: /LaIndia/dashboard');
-            exit;
-        }
+        session_start();
 
-        $timeout = 600; // 10 minutos en segundos
+        $timeout = 600;
 
         if (isset($_SESSION['LAST_ACTIVITY'])) {
             $inactivo = time() - $_SESSION['LAST_ACTIVITY'];
@@ -28,13 +21,11 @@ class HomeController
                 exit;
             }
         }
-        $_SESSION['LAST_ACTIVITY'] = time();*/
+        $_SESSION['LAST_ACTIVITY'] = time();
     }
 
-    // Página principal (login)
     public function index()
     {
-        // Si ya está logueado, redirigir al dashboard
         if (isset($_SESSION['usuario'])) {
             header('Location: /dashboard');
             exit;
@@ -43,9 +34,38 @@ class HomeController
         require_once BASE_PATH . '/views/home.php';
     }
 
+    public function login()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Método no permitido');
+            }
+
+            $email = $_POST['login-email'];
+            $password = $_POST['login-password'];
+
+            $usuario = $this->model->listarUsuarios($email);
+
+            if (password_verify($password, $usuario['password'])) {
+                $_SESSION['usuario'] = [
+                    'id' => $usuario['id'],
+                    'nombre' => $usuario['nombre'],
+                    'email' => $usuario['email'],
+                    'rol' => $usuario['rol']
+                ];
+                echo json_encode(['status' => 'success', 'message' => 'Inicio de sesión exitoso.']);
+                return;
+            }
+
+            echo json_encode(['success' => false, 'message' => 'Correo o contraseña incorrectos']);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Error al iniciar sesión.']);
+        }
+    }
+
     public function resetPassword()
     {
-        // Si ya está logueado, redirigir al dashboard
         if (isset($_SESSION['usuario'])) {
             header('Location: /dashboard');
             exit;
@@ -54,8 +74,6 @@ class HomeController
         require_once BASE_PATH . '/views/recuperar_password.php';
     }
 
-
-    // Cerrar sesión
     public function logout()
     {
         $this->cerrarSesion();
@@ -68,5 +86,4 @@ class HomeController
         session_unset();
         session_destroy();
     }
-
 }

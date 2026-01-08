@@ -17,7 +17,8 @@
                     <th>Productos</th>
                     <th>Usuario</th>
                     <th>Cliente/Proveedor</th>
-                    <th>Detalles</th>
+                    <th>Valor total</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody id="historial-table"></tbody>

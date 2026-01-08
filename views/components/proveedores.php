@@ -8,7 +8,6 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Nombre</th>
                     <th>Contacto</th>
                     <th>Email</th>

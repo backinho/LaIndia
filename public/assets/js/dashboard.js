@@ -7,13 +7,8 @@ class InventarioApp {
     this.categorias = [];
     this.proveedores = [];
     this.usuarioActual = null;
-    this.editingUserId = null;
-    this.editingClienteId = null;
-    this.editingCategoriaId = null;
-    this.editingProveedorId = null;
 
     this.cargarDatosCompletos().then(() => {
-      this.inicializarUsuarioActual();
       this.inicializar();
     });
   }
@@ -22,21 +17,12 @@ class InventarioApp {
     await Promise.all([
       this.inicializarProductosList(),
       this.inicializarCategoriasList(),
+      this.inicializarMovimientosList(),
       this.inicializarProveedoresList(),
       this.inicializarClientesList(),
       this.inicializarUsuariosList(),
+      this.inicializarUsuarioActivo(),
     ]);
-  }
-
-  inicializarUsuarioActual() {
-    const usuarioGuardado = localStorage.getItem("usuarioActual");
-    if (usuarioGuardado) {
-      this.usuarioActual = JSON.parse(usuarioGuardado);
-    } else {
-      this.usuarioActual = this.usuarios[0];
-      localStorage.setItem("usuarioActual", JSON.stringify(this.usuarioActual));
-    }
-    this.actualizarInfoUsuario();
   }
 
   async inicializarProductosList() {
@@ -70,6 +56,23 @@ class InventarioApp {
       const data = await response.json();
 
       this.categorias = data.data;
+    }
+  }
+
+  async inicializarMovimientosList() {
+    const response = await fetch("movimientos/listar", {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      console.error("Error al guardar movimientos en el servidor");
+      return;
+    }
+
+    if (response.ok) {
+      const data = await response.json();
+
+      this.movimientos = data.data;
     }
   }
 
@@ -124,30 +127,22 @@ class InventarioApp {
     }
   }
 
-  async guardarProductos() {
-    const response = await fetch("productos/listar", {
+  async inicializarUsuarioActivo() {
+    const response = await fetch("usuarios/listarActivo", {
       method: "POST",
     });
 
     if (!response.ok) {
-      console.error("Error al guardar productos en el servidor");
+      console.error("Error al guardar al usuario activo en el servidor");
       return;
     }
 
     if (response.ok) {
       const data = await response.json();
 
-      this.productos = data.products;
+      this.usuarioActual = data.data;
     }
   }
-
-  guardarMovimientos() {
-    //localStorage.setItem("movimientos", JSON.stringify(this.movimientos));
-  }
-
-  guardarUsuarios(usuarios) {}
-
-  guardarClientes(clientes) {}
 
   inicializar() {
     this.inicializarTema();
@@ -316,6 +311,24 @@ class InventarioApp {
     });
   }
 
+  async logout() {
+    const response = await fetch("logout", {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      console.error("Error al cerrar sesión en el servidor");
+      return;
+    }
+
+    if (response.ok) {
+      this.mostrarNotificacion("Sesión cerrada exitosamente", "success");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    }
+  }
+
   inicializarMenuUsuario() {
     const userButton = document.getElementById("user-button");
     const userMenu = document.querySelector(".user-menu");
@@ -339,10 +352,7 @@ class InventarioApp {
     if (logout) {
       logout.addEventListener("click", (e) => {
         e.preventDefault();
-        this.mostrarNotificacion("Sesión cerrada exitosamente", "success");
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        this.logout();
       });
     }
   }
@@ -461,17 +471,17 @@ class InventarioApp {
           minute: "2-digit",
         });
 
-        const productosTexto = movimiento.productos
-          ? `${movimiento.productos.length} productos`
-          : movimiento.productoNombre;
+        const cliente_proveedor = movimiento.nombre_cliente
+          ? `${movimiento.nombre_cliente} productos`
+          : movimiento.nombre_proveedor;
 
         return `
         <tr>
           <td><span class="status-badge ${movimiento.tipo}">${
           movimiento.tipo === "entrada" ? "Entrada" : "Salida"
         }</span></td>
-          <td>${productosTexto}</td>
-          <td>${movimiento.cantidadTotal || movimiento.cantidad}</td>
+          <td>${cliente_proveedor}</td>
+          <td>${movimiento.cantidad_total}</td>
           <td>${fechaFormateada}</td>
         </tr>
       `;
@@ -543,7 +553,6 @@ class InventarioApp {
           <td>${producto.categoria_nombre}</td>
           <td>${producto.stock}</td>
           <td>$${parseFloat(producto.precio).toFixed(2)}</td>
-          <td>${producto.proveedor_nombre}</td>
           <td>$${valorTotal}</td>
           <td>
             <button class="action-btn" onclick="app.verDetalleProducto('${
@@ -668,8 +677,8 @@ class InventarioApp {
     }
 
     const movimientosProducto = this.movimientos.filter((m) => {
-      if (m.productos) {
-        return m.productos.some((p) => p.id === productoId);
+      if (m.detalles) {
+        return m.detalles.some((p) => p.producto_id === productoId);
       }
       return m.productoId === productoId;
     });
@@ -722,7 +731,14 @@ class InventarioApp {
                   .map((mov) => {
                     const fecha = new Date(mov.fecha);
                     const fechaFormateada = fecha.toLocaleString("es-ES");
-                    let cantidad = mov.cantidad;
+                    let cantidad = "";
+                    if (mov.detalles && Array.isArray(mov.detalles)) {
+                      mov.detalles.forEach((detalle) => {
+                        if (detalle.producto_id === productoId) {
+                          cantidad = detalle.cantidad;
+                        }
+                      });
+                    }
                     if (mov.productos) {
                       const prodEnMov = mov.productos.find(
                         (p) => p.id === productoId
@@ -738,7 +754,7 @@ class InventarioApp {
                     <span>${cantidad} unidades</span>
                     <span class="movimiento-fecha">${fechaFormateada}</span>
                   </div>
-                  <span>${mov.usuario}</span>
+                  <span>${mov.nombre_usuario}</span>
                 </div>
               `;
                   })
@@ -780,7 +796,7 @@ class InventarioApp {
     if (countItems === 0 && !existingMsg) {
       const defaultItem = document.createElement("div");
       defaultItem.innerHTML =
-        '<p style="color: var(--text-secondary); display: flex; justify-content: center;" id="no-productos">No hay productos agregados</p>';
+        '<p style="text-align: center; padding: 20px; color: var(--text-secondary);" id="no-productos">No hay productos agregados</p>';
       listEntrada.appendChild(defaultItem);
     }
   }
@@ -963,8 +979,8 @@ class InventarioApp {
             <input type="text" class="form-input entrada-categoria" readonly />
           </div>
           <div class="form-group">
-            <label>Precio Unitario</label>
-            <select class="form-input entrada-precio" min="1" required>
+            <label>Proveedor</label>
+            <select class="form-input entrada-proveedor" min="1" required>
               <option value="">Seleccionar proveedor</option>
               ${proveedoresOptions}
             </select>
@@ -1057,150 +1073,171 @@ class InventarioApp {
     });
   }
 
-  registrarEntrada() {
+  async registrarEntrada() {
     const list = document.getElementById("productos-entrada-list");
     if (!list) return;
 
     const items = list.querySelectorAll(".producto-entrada-item");
     const productos = [];
 
-    for (let item of items) {
-      const codigo = item.querySelector(".producto-codigo").value.trim();
-      const nombre = item.querySelector(".producto-nombre").value.trim();
-      const cantidad = parseInt(item.querySelector(".producto-cantidad").value);
-      const precio = parseFloat(item.querySelector(".producto-precio").value);
-      const categoria = item.querySelector(".producto-categoria").value;
-      const proveedor = item.querySelector(".producto-proveedor").value.trim();
-      const notas = item.querySelector(".producto-notas").value.trim();
+    // Validar que haya al menos un producto
+    if (items.length === 0) {
+      this.mostrarNotificacion(
+        "Agrega al menos un producto para registrar la entrada",
+        "error"
+      );
+      return;
+    }
 
-      if (
-        !codigo ||
-        !nombre ||
-        !cantidad ||
-        !precio ||
-        !categoria ||
-        !proveedor
-      ) {
+    items.forEach((item) => {
+      const esNuevo = item.querySelector(".producto-nombre") !== null;
+
+      let datosProducto = {};
+
+      if (esNuevo) {
+        const nombre = item.querySelector(".producto-nombre").value.trim();
+        const codigo = item.querySelector(".producto-codigo").value.trim();
+        const cantidad = item.querySelector(".producto-cantidad").value;
+        const precio = item.querySelector(".producto-precio").value;
+        const categoria_id = item.querySelector(".producto-categoria").value;
+        const proveedor_id = item.querySelector(".producto-proveedor").value;
+        const notas = item.querySelector(".producto-notas").value.trim();
+
+        // Validaciones
+        if (!nombre || !codigo || !cantidad || !precio || !categoria_id) {
+          this.mostrarNotificacion(
+            "Complete todos los campos requeridos",
+            "error"
+          );
+          throw new Error("Campos incompletos");
+        }
+
+        if (parseInt(cantidad) <= 0 || parseFloat(precio) <= 0) {
+          this.mostrarNotificacion(
+            "Cantidad y precio deben ser mayores a 0",
+            "error"
+          );
+          throw new Error("Valores inválidos");
+        }
+
+        datosProducto = {
+          tipo: "nuevo",
+          nombre: nombre,
+          codigo: codigo,
+          cantidad: parseInt(cantidad),
+          precio: parseFloat(precio),
+          categoria_id: categoria_id,
+          proveedor_id: proveedor_id,
+          notas: notas,
+          descripcion: notas, // Usar notas como descripción
+        };
+      } else {
+        const id = item.querySelector(".entrada-producto").value;
+        const codigo = item.querySelector(".entrada-code").value;
+        const cantidad = item.querySelector(".entrada-cantidad").value;
+        const precio = item.querySelector(".entrada-precio").value;
+        const proveedor_id =
+          item.querySelector(".entrada-proveedor")?.value || "";
+        const notas = item.querySelector(".entrada-notas").value.trim();
+
+        // Validaciones
+        if (!id || !cantidad || !precio) {
+          this.mostrarNotificacion(
+            "Complete todos los campos requeridos",
+            "error"
+          );
+          throw new Error("Campos incompletos");
+        }
+
+        if (parseInt(cantidad) <= 0 || parseFloat(precio) <= 0) {
+          this.mostrarNotificacion(
+            "Cantidad y precio deben ser mayores a 0",
+            "error"
+          );
+          throw new Error("Valores inválidos");
+        }
+
+        datosProducto = {
+          tipo: "existente",
+          id: id,
+          codigo: codigo,
+          cantidad: parseInt(cantidad),
+          precio: parseFloat(precio),
+          proveedor_id: proveedor_id,
+          notas: notas,
+        };
+      }
+      productos.push(datosProducto);
+    });
+
+    try {
+      const data = new FormData();
+      data.append("productos", JSON.stringify(productos));
+
+      const response = await fetch("entradas/registrar", {
+        method: "POST",
+        body: data,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
         this.mostrarNotificacion(
-          "Por favor complete todos los campos requeridos",
+          "Error al registrar la entrada. Inténtalo de nuevo.",
           "error"
         );
         return;
       }
 
-      productos.push({
-        codigo,
-        nombre,
-        cantidad,
-        precio,
-        categoria,
-        proveedor,
-        notas,
-      });
-    }
+      const result = await response.json();
 
-    let cantidadTotal = 0;
+      if (result.status === true) {
+        this.mostrarNotificacion("Entrada registrada exitosamente", "success");
+        // Limpiar formulario y recargar datos
+        list.innerHTML = "";
+        this.renderDefaultEntradaItem();
 
-    productos.forEach((prod) => {
-      const productoExistente = this.productos.find(
-        (p) => p.codigo === prod.codigo
-      );
-
-      if (productoExistente) {
-        productoExistente.stock += prod.cantidad;
-        productoExistente.precio = prod.precio;
-        prod.id = productoExistente.id;
+        // Recargar datos
+        await this.cargarDatosCompletos();
+        this.renderizarInventarioCompleto();
+        this.renderizarResumen();
       } else {
-        const nuevoProducto = {
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          codigo: prod.codigo,
-          nombre: prod.nombre,
-          categoria: prod.categoria,
-          stock: prod.cantidad,
-          precio: prod.precio,
-          proveedor: prod.proveedor,
-        };
-        this.productos.push(nuevoProducto);
-        prod.id = nuevoProducto.id;
+        this.mostrarNotificacion(
+          result.message || "Error al registrar la entrada",
+          "error"
+        );
       }
+    } catch (error) {
+      console.error("Error:", error);
+      this.mostrarNotificacion(
+        "Error de conexión. Verifica tu conexión a internet.",
+        "error"
+      );
+    }
+  }
 
-      cantidadTotal += prod.cantidad;
-    });
+  renderDefaultSalidaItem() {
+    const listSalida = document.getElementById("productos-salida-list");
+    if (!listSalida) return;
 
-    const movimiento = {
-      id: Date.now().toString(),
-      tipo: "entrada",
-      productos: productos,
-      cantidadTotal: cantidadTotal,
-      fecha: new Date().toISOString(),
-      usuario: this.usuarioActual ? this.usuarioActual.nombre : "Usuario",
-      proveedor: productos[0].proveedor,
-      detalles: `Entrada de ${productos.length} producto(s) - Total: ${cantidadTotal} unidades`,
-    };
+    const countItems = listSalida.querySelectorAll(
+      ".producto-salida-item"
+    ).length;
 
-    this.movimientos.push(movimiento);
-    this.guardarProductos();
-    this.guardarMovimientos();
-    this.renderizarInventarioCompleto();
-    this.mostrarNotificacion(
-      `Entrada registrada exitosamente: ${productos.length} productos`,
-      "success"
-    );
-
-    list.innerHTML = `
-      <div class="producto-entrada-item">
-        <div class="item-header">
-          <h4>Producto 1</h4>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nombre del Producto</label>
-            <input type="text" class="form-input producto-nombre" required />
-          </div>
-          <div class="form-group">
-            <label>Código/SKU</label>
-            <input type="text" class="form-input producto-codigo" required />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Cantidad</label>
-            <input type="number" class="form-input producto-cantidad" min="1" required />
-          </div>
-          <div class="form-group">
-            <label>Precio Unitario</label>
-            <input type="number" class="form-input producto-precio" step="0.01" min="0" required />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Categoría</label>
-            <select class="form-input producto-categoria" required>
-              <option value="">Seleccionar categoría</option>
-              <option value="Electrónica">Electrónica</option>
-              <option value="Ropa">Ropa</option>
-              <option value="Alimentos">Alimentos</option>
-              <option value="Herramientas">Herramientas</option>
-              <option value="Otros">Otros</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Proveedor</label>
-            <input type="text" class="form-input producto-proveedor" required />
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Notas (opcional)</label>
-          <textarea class="form-input producto-notas" rows="2"></textarea>
-        </div>
-        <button type="button" class="btn btn-secondary btn-remove-producto" style="display: none;">Eliminar Producto</button>
-      </div>
-    `;
+    if (countItems === 0) {
+      listSalida.innerHTML = `
+            <div id="no-productos-salida" style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                <p>No hay productos seleccionados para la salida</p>
+            </div>
+        `;
+    }
   }
 
   inicializarSalida() {
     const addBtn = document.getElementById("add-producto-salida");
     const registrarBtn = document.getElementById("registrar-salida");
+
+    this.renderDefaultSalidaItem();
 
     if (addBtn) {
       addBtn.addEventListener("click", () => {
@@ -1223,86 +1260,90 @@ class InventarioApp {
     const list = document.getElementById("productos-salida-list");
     if (!list) return;
 
-    const currentItems = list.querySelectorAll(".producto-salida-item").length;
+    // Eliminar mensaje de "No hay productos" si existe
+    const noProductosMsg = document.getElementById("no-productos-salida");
+    if (noProductosMsg) {
+      list.innerHTML = "";
+    }
+
     const newItem = document.createElement("div");
-    newItem.className = "producto-salida-item";
+    newItem.className = "producto-salida-item"; // Asegúrate que el CSS sea similar a .producto-entrada-item
+    newItem.style.animation = "fadeIn 0.3s ease-in-out";
+
+    const currentItems = list.querySelectorAll(".producto-salida-item").length;
+
+    // Generar opciones de productos con stock
+    const productosDisponibles = this.productos.filter((p) => p.stock > 0);
+    let productosOptions = productosDisponibles
+      .map(
+        (p) =>
+          `<option value="${p.id}">${p.nombre} (${p.codigo}) - Stock: ${p.stock}</option>`
+      )
+      .join("");
+
     newItem.innerHTML = `
-      <div class="item-header">
-        <h4>Producto ${currentItems + 1}</h4>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Producto</label>
-          <select class="form-input salida-producto" required>
-            <option value="">Seleccionar producto</option>
-          </select>
+        <div class="item-header">
+            <h4>Producto ${currentItems + 1}</h4>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Producto</label>
+                <select class="form-input salida-producto" required>
+                    <option value="">Seleccionar producto</option>
+                    ${productosOptions}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Stock Disponible</label>
+                <input type="text" class="form-input salida-stock" readonly />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Cantidad a Retirar</label>
+                <input type="number" class="form-input salida-cantidad" min="1" required />
+            </div>
+            <div class="form-group">
+                <label>Motivo</label>
+                <select class="form-input salida-motivo" required>
+                    <option value="">Seleccionar motivo</option>
+                    <option value="Venta">Venta</option>
+                    <option value="Devolución">Devolución</option>
+                    <option value="Merma">Merma</option>
+                    <option value="Uso interno">Uso interno</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
         </div>
         <div class="form-group">
-          <label>Stock Disponible</label>
-          <input type="text" class="form-input salida-stock" readonly />
+            <label>Notas (opcional)</label>
+            <textarea class="form-input salida-notas" rows="2"></textarea>
         </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Cantidad a Retirar</label>
-          <input type="number" class="form-input salida-cantidad" min="1" required />
-        </div>
-        <div class="form-group">
-          <label>Motivo</label>
-          <select class="form-input salida-motivo" required>
-            <option value="">Seleccionar motivo</option>
-            <option value="Venta">Venta</option>
-            <option value="Devolución">Devolución</option>
-            <option value="Merma">Merma</option>
-            <option value="Uso interno">Uso interno</option>
-            <option value="Otro">Otro</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Notas (opcional)</label>
-        <textarea class="form-input salida-notas" rows="2"></textarea>
-      </div>
-      <button type="button" class="btn btn-secondary btn-remove-salida">Eliminar Producto</button>
+        <button type="button" class="btn btn-secondary btn-remove-producto">Eliminar Producto</button>
     `;
 
     list.appendChild(newItem);
 
+    // Evento para actualizar el stock visual al seleccionar
     const selectProducto = newItem.querySelector(".salida-producto");
-    const productosDisponibles = this.productos.filter((p) => p.stock > 0);
+    selectProducto.addEventListener("change", (e) => {
+      const producto = this.productos.find((p) => p.id === e.target.value);
+      const stockInput = newItem.querySelector(".salida-stock");
+      if (stockInput) stockInput.value = producto ? producto.stock : "";
+    });
 
-    if (selectProducto) {
-      selectProducto.innerHTML =
-        '<option value="">Seleccionar producto</option>' +
-        productosDisponibles
-          .map(
-            (p) =>
-              `<option value="${p.id}">${p.nombre} (${p.codigo}) - Stock: ${p.stock}</option>`
-          )
-          .join("");
+    // Botón eliminar con la misma lógica que entrada
+    const removeBtn = newItem.querySelector(".btn-remove-producto");
+    removeBtn.addEventListener("click", () => {
+      newItem.remove();
+      this.actualizarNumeracionProductos("salida");
 
-      selectProducto.addEventListener("change", (e) => {
-        const productoId = e.target.value;
-        const producto = this.productos.find((p) => p.id === productoId);
-        const stockInput = newItem.querySelector(".salida-stock");
+      if (list.querySelectorAll(".producto-salida-item").length === 0) {
+        this.renderDefaultSalidaItem();
+      }
+    });
 
-        if (producto && stockInput) {
-          stockInput.value = producto.stock.toString();
-        } else if (stockInput) {
-          stockInput.value = "";
-        }
-      });
-    }
-
-    const removeBtn = newItem.querySelector(".btn-remove-salida");
-    if (removeBtn) {
-      removeBtn.style.display = "inline-block";
-      removeBtn.addEventListener("click", () => {
-        newItem.remove();
-        this.actualizarNumeracionProductos("salida");
-      });
-    }
-
+    this.actualizarNumeracionProductos("salida");
     this.mostrarBotonesEliminarSalida();
   }
 
@@ -1314,7 +1355,7 @@ class InventarioApp {
     items.forEach((item, index) => {
       const removeBtn = item.querySelector(".btn-remove-salida");
       if (removeBtn) {
-        removeBtn.style.display = items.length > 1 ? "inline-block" : "none";
+        removeBtn.style.display = items.length >= 1 ? "inline-block" : "none";
       }
     });
   }
@@ -1372,144 +1413,135 @@ class InventarioApp {
         .join("");
   }
 
-  registrarSalida() {
+  // En el archivo dashboard.js, busca la función registrarSalida() y reemplázala con:
+
+  async registrarSalida() {
     const list = document.getElementById("productos-salida-list");
-    const clienteSelect = document.getElementById("salida-cliente-select");
-
-    if (!list || !clienteSelect) return;
-
-    const clienteId = clienteSelect.value;
-    if (!clienteId) {
-      this.mostrarNotificacion("Por favor seleccione un cliente", "error");
-      return;
-    }
-
-    const cliente = this.clientes.find((c) => c.id === clienteId);
-    if (!cliente) {
-      this.mostrarNotificacion("Cliente no encontrado", "error");
-      return;
-    }
+    if (!list) return;
 
     const items = list.querySelectorAll(".producto-salida-item");
     const productos = [];
+    const cliente_id = document.getElementById("salida-cliente-select").value;
 
-    for (let item of items) {
+    // Validar que haya al menos un producto
+    if (items.length === 0) {
+      this.mostrarNotificacion(
+        "Agrega al menos un producto para registrar la salida",
+        "error"
+      );
+      return;
+    }
+
+    // Validar que se haya seleccionado un cliente
+    if (!cliente_id) {
+      this.mostrarNotificacion("Selecciona un cliente para la salida", "error");
+      return;
+    }
+
+    // Recolectar y validar datos
+    let errorFound = false;
+    items.forEach((item) => {
       const productoId = item.querySelector(".salida-producto").value;
-      const cantidad = parseInt(item.querySelector(".salida-cantidad").value);
+      const cantidad = item.querySelector(".salida-cantidad").value;
       const motivo = item.querySelector(".salida-motivo").value;
       const notas = item.querySelector(".salida-notas").value.trim();
 
+      // Validaciones
       if (!productoId || !cantidad || !motivo) {
         this.mostrarNotificacion(
-          "Por favor complete todos los campos requeridos",
+          "Complete todos los campos requeridos en cada producto",
           "error"
         );
+        errorFound = true;
         return;
       }
 
       const producto = this.productos.find((p) => p.id === productoId);
       if (!producto) {
         this.mostrarNotificacion("Producto no encontrado", "error");
+        errorFound = true;
         return;
       }
 
-      if (cantidad > producto.stock) {
+      if (parseInt(cantidad) <= 0) {
+        this.mostrarNotificacion("La cantidad debe ser mayor a 0", "error");
+        errorFound = true;
+        return;
+      }
+
+      if (parseInt(cantidad) > producto.stock) {
         this.mostrarNotificacion(
-          `Stock insuficiente para ${producto.nombre}`,
+          `Stock insuficiente para ${producto.nombre}. Stock disponible: ${producto.stock}`,
+          "error"
+        );
+        errorFound = true;
+        return;
+      }
+
+      productos.push({
+        id: productoId,
+        codigo: producto.codigo,
+        cantidad: parseInt(cantidad),
+        motivo: motivo,
+        notas: notas,
+        precio: parseFloat(producto.precio),
+      });
+    });
+
+    if (errorFound || productos.length === 0) {
+      return;
+    }
+
+    try {
+      const data = new FormData();
+      data.append("productos", JSON.stringify(productos));
+      data.append("cliente_id", cliente_id);
+
+      const response = await fetch("salidas/registrar", {
+        method: "POST",
+        body: data,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        this.mostrarNotificacion(
+          "Error al registrar la salida. Inténtalo de nuevo.",
           "error"
         );
         return;
       }
 
-      productos.push({
-        id: producto.id,
-        nombre: producto.nombre,
-        codigo: producto.codigo,
-        cantidad,
-        motivo,
-        notas,
-      });
-    }
+      const result = await response.json();
 
-    let cantidadTotal = 0;
+      if (result.status === true) {
+        this.mostrarNotificacion("Salida registrada exitosamente", "success");
 
-    productos.forEach((prod) => {
-      const producto = this.productos.find((p) => p.id === prod.id);
-      if (producto) {
-        producto.stock -= prod.cantidad;
-        cantidadTotal += prod.cantidad;
+        // Limpiar formulario
+        list.innerHTML = "";
+        this.renderDefaultSalidaItem();
+
+        // Limpiar selector de cliente
+        document.getElementById("salida-cliente-select").value = "";
+
+        // Recargar datos
+        await this.cargarDatosCompletos();
+        this.renderizarInventarioCompleto();
+        this.renderizarResumen();
+        this.actualizarSelectProductos();
+      } else {
+        this.mostrarNotificacion(
+          result.message || "Error al registrar la salida",
+          "error"
+        );
       }
-    });
-
-    const movimiento = {
-      id: Date.now().toString(),
-      tipo: "salida",
-      productos: productos,
-      cantidadTotal: cantidadTotal,
-      fecha: new Date().toISOString(),
-      usuario: this.usuarioActual ? this.usuarioActual.nombre : "Usuario",
-      cliente: cliente.nombre,
-      clienteId: cliente.id,
-      detalles: `Salida de ${productos.length} producto(s) - Total: ${cantidadTotal} unidades - Cliente: ${cliente.nombre}`,
-    };
-
-    this.movimientos.push(movimiento);
-    this.guardarProductos();
-    this.guardarMovimientos();
-    this.actualizarSelectProductos();
-    this.renderizarInventarioCompleto();
-    this.mostrarNotificacion(
-      `Salida registrada exitosamente: ${productos.length} productos`,
-      "success"
-    );
-
-    list.innerHTML = `
-      <div class="producto-salida-item">
-        <div class="item-header">
-          <h4>Producto 1</h4>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Producto</label>
-            <select class="form-input salida-producto" required>
-              <option value="">Seleccionar producto</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Stock Disponible</label>
-            <input type="text" class="form-input salida-stock" readonly />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Cantidad a Retirar</label>
-            <input type="number" class="form-input salida-cantidad" min="1" required />
-          </div>
-          <div class="form-group">
-            <label>Motivo</label>
-            <select class="form-input salida-motivo" required>
-              <option value="">Seleccionar motivo</option>
-              <option value="Venta">Venta</option>
-              <option value="Devolución">Devolución</option>
-              <option value="Merma">Merma</option>
-              <option value="Uso interno">Uso interno</option>
-              <option value="Otro">Otro</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Notas (opcional)</label>
-          <textarea class="form-input salida-notas" rows="2"></textarea>
-        </div>
-        <button type="button" class="btn btn-secondary btn-remove-salida" style="display: none;">Eliminar Producto</button>
-      </div>
-    `;
-
-    if (clienteSelect) {
-      clienteSelect.value = "";
+    } catch (error) {
+      console.error("Error:", error);
+      this.mostrarNotificacion(
+        "Error de conexión. Verifica tu conexión a internet.",
+        "error"
+      );
     }
-
-    this.actualizarSelectProductos();
   }
 
   inicializarHistorial() {
@@ -1555,14 +1587,14 @@ class InventarioApp {
         const fecha = new Date(movimiento.fecha);
         const fechaFormateada = fecha.toLocaleString("es-ES");
 
-        const productosTexto = movimiento.productos
-          ? `${movimiento.productos.length} producto(s)`
-          : movimiento.productoNombre || "N/A";
+        const productosTexto = movimiento.cantidad_total
+          ? `${movimiento.cantidad_total} producto(s)`
+          : "N/A";
 
         const clienteProveedor =
           movimiento.tipo === "entrada"
-            ? movimiento.proveedor || "N/A"
-            : movimiento.cliente || "N/A";
+            ? movimiento.nombre_proveedor || "N/A"
+            : movimiento.nombre_cliente || "N/A";
 
         return `
         <tr>
@@ -1571,13 +1603,126 @@ class InventarioApp {
           movimiento.tipo === "entrada" ? "Entrada" : "Salida"
         }</span></td>
           <td>${productosTexto}</td>
-          <td>${movimiento.usuario}</td>
+          <td>${movimiento.nombre_usuario}</td>
           <td>${clienteProveedor}</td>
-          <td>${movimiento.detalles}</td>
+          <td>${movimiento.valor_total}</td>
+          <td>
+            <button class="action-btn" onclick="app.verDetalleHistorial('${
+              movimiento.id
+            }')">Ver Detalle</button>
+          </td>
         </tr>
       `;
       })
       .join("");
+  }
+
+  verDetalleHistorial(movimeintoId) {
+    const movimiento = this.movimientos.find((p) => p.id === movimeintoId);
+    if (!movimiento) return;
+
+    const movimientosProducto = movimiento.detalles;
+
+    const modal = document.getElementById("historial-detalle-modal");
+    const content = document.getElementById("historial-detalle-content");
+    const titulo = document.getElementById("historial-detalle-titulo");
+
+    const proveedor_cliente = movimiento.nombre_cliente
+      ? movimiento.nombre_cliente
+      : movimiento.nombre_proveedor;
+
+    const productos =
+      movimiento.total_productos === 1
+        ? movimiento.total_productos + " Producto"
+        : movimiento.total_productos + " Productos";
+
+    const unidades =
+      movimiento.total_cantidad === 1
+        ? movimiento.total_cantidad + " Unidad"
+        : movimiento.total_cantidad + " Unidades";
+
+    if (content) {
+      content.innerHTML = `
+        <div class="producto-detalle-grid">
+          <div class="detalle-item">
+            <span class="detalle-label">Cliente/Proveedor</span>
+            <span class="detalle-value">${proveedor_cliente}</span>
+          </div>
+          <div class="detalle-item">
+            <span class="detalle-label">Usuario</span>
+            <span class="detalle-value">${movimiento.nombre_usuario}</span>
+          </div>
+          <div class="detalle-item">
+            <span class="detalle-label">Total de productos</span>
+            <span class="detalle-value">${productos}</span>
+          </div>
+           <div class="detalle-item">
+            <span class="detalle-label">Total de unidades</span>
+            <span class="detalle-value">${unidades}</span>
+          </div>
+          <div class="detalle-item">
+            <span class="detalle-label">Tipo de movimiento</span>
+            <span class="detalle-value">${movimiento.tipo}</span>
+          </div>
+          <div class="detalle-item">
+            <span class="detalle-label">Precio total</span>
+            <span class="detalle-value">$${parseFloat(
+              movimiento.valor_total
+            ).toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div class="movimientos-producto">
+          <h4>Historial de Movimientos (${movimientosProducto.length})</h4>
+          ${
+            movimientosProducto.length === 0
+              ? '<p style="color: var(--text-secondary);">No hay movimientos registrados para este producto</p>'
+              : movimientosProducto
+                  .reverse()
+                  .slice(0, 10)
+                  .map((mov) => {
+                    const fecha = new Date(mov.created_at);
+                    const fechaFormateada = fecha.toLocaleString("es-ES");
+                    const precio_total = mov.precio_unitario * mov.cantidad;
+                    return `
+                <div class="movimiento-item">
+                  <div class="movimiento-info">
+                    <span>${mov.nombre_producto}</span>
+                    <span>${mov.cantidad} unidades</span>
+                    <span class="movimiento-fecha">Precio unitario: ${
+                      mov.precio_unitario
+                    }</span>
+                    <span class="movimiento-fecha">Precio total: ${precio_total.toFixed(
+                      2
+                    )}</span>
+                  </div>
+                </div>
+              `;
+                  })
+                  .join("")
+          }
+        </div>
+      `;
+    }
+
+    if (modal) {
+      modal.classList.add("show");
+    }
+
+    const closeBtn = document.getElementById("producto-detalle-close");
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        if (modal) modal.classList.remove("show");
+      };
+    }
+
+    if (modal) {
+      modal.onclick = (e) => {
+        if (e.target === modal) {
+          modal.classList.remove("show");
+        }
+      };
+    }
   }
 
   inicializarFiltrosHistorial() {
@@ -1639,12 +1784,6 @@ class InventarioApp {
         '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay categorías registradas</td></tr>';
       return;
     }
-
-    console.log(
-      "Renderizando categorías:",
-      this.categorias,
-      categoriasFiltradas
-    );
 
     tbody.innerHTML = categoriasFiltradas
       .map((categoria) => {
@@ -1822,8 +1961,6 @@ class InventarioApp {
       data.append("categoria-id", id);
     }
 
-    console.log("Guardando categoría:", data);
-
     if (!nombre || !codigo || !descripcion) {
       this.mostrarNotificacion(
         "Por favor complete todos los campos requeridos",
@@ -1911,6 +2048,7 @@ class InventarioApp {
     this.renderizarProveedores();
     this.inicializarBusquedaProveedores();
     this.inicializarModalProveedor();
+    this.inicializarConfirmacionProveedor();
   }
 
   renderizarProveedores(filtro = "") {
@@ -1937,7 +2075,6 @@ class InventarioApp {
       .map(
         (proveedor) => `
       <tr>
-        <td>#${proveedor.id}</td>
         <td>${proveedor.nombre}</td>
         <td>${proveedor.contacto}</td>
         <td>${proveedor.email}</td>
@@ -2018,8 +2155,7 @@ class InventarioApp {
     const proveedor = this.proveedores.find((p) => p.id === id);
     if (!proveedor) return;
 
-    this.editingProveedorId = id;
-
+    document.getElementById("proveedor-id").value = proveedor.id;
     document.getElementById("proveedor-nombre").value = proveedor.nombre;
     document.getElementById("proveedor-contacto").value = proveedor.contacto;
     document.getElementById("proveedor-email").value = proveedor.email;
@@ -2038,26 +2174,68 @@ class InventarioApp {
     const proveedor = this.proveedores.find((p) => p.id === id);
     if (!proveedor) return;
 
-    const productosProveedor = this.productos.filter(
-      (p) => p.proveedor === proveedor.nombre
-    );
-    if (productosProveedor.length > 0) {
-      this.mostrarNotificacion(
-        `No se puede eliminar el proveedor porque tiene ${productosProveedor.length} productos asociados`,
-        "error"
-      );
-      return;
-    }
+    document.getElementById("confirmacion-id").value = proveedor.id;
 
-    if (!confirm("¿Está seguro de eliminar este proveedor?")) return;
-
-    this.proveedores = this.proveedores.filter((p) => p.id !== id);
-    this.renderizarProveedores();
-    this.actualizarSelectsProveedores();
-    this.mostrarNotificacion("Proveedor eliminado exitosamente", "success");
+    const modal = document.getElementById("confirmacion-modal");
+    if (modal) modal.classList.add("show");
   }
 
-  guardarProveedor() {
+  inicializarConfirmacionProveedor() {
+    const modal = document.getElementById("confirmacion-modal");
+    const confirmarBtn = document.getElementById("confirmacion-confirm");
+    const closeBtn = document.getElementById("confirmacion-close");
+    const cancelarBtn = document.getElementById("confirmacion-cancel");
+
+    if (cancelarBtn) {
+      cancelarBtn.onclick = () => {
+        modal.classList.remove("show");
+      };
+    }
+
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        modal.classList.remove("show");
+      };
+    }
+
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          modal.classList.remove("show");
+        }
+      });
+    }
+
+    if (confirmarBtn) {
+      confirmarBtn.onclick = async () => {
+        const data = new FormData();
+        const id = document.getElementById("confirmacion-id").value;
+        data.append("confirmacion-id", id);
+
+        const response = await fetch("proveedores/eliminar", {
+          method: "POST",
+          body: data,
+        });
+
+        if (!response.ok) {
+          this.mostrarNotificacion("Error al eliminar el proveedor", "error");
+          modal.classList.remove("show");
+          return;
+        }
+
+        this.mostrarNotificacion("Proveedor eliminado exitosamente", "success");
+        this.cargarDatosCompletos().then(() => {
+          this.inicializarProveedores();
+          this.actualizarSelectsProveedores();
+        });
+      };
+    }
+
+    if (modal) modal.classList.remove("show");
+  }
+
+  async guardarProveedor() {
+    const id = document.getElementById("proveedor-id").value.trim();
     const nombre = document.getElementById("proveedor-nombre").value.trim();
     const contacto = document.getElementById("proveedor-contacto").value.trim();
     const email = document.getElementById("proveedor-email").value.trim();
@@ -2075,49 +2253,67 @@ class InventarioApp {
       return;
     }
 
-    if (this.editingProveedorId) {
-      const proveedor = this.proveedores.find(
-        (p) => p.id === this.editingProveedorId
-      );
-      if (proveedor) {
-        const nombreAnterior = proveedor.nombre;
-        proveedor.nombre = nombre;
-        proveedor.contacto = contacto;
-        proveedor.email = email;
-        proveedor.telefono = telefono;
-        proveedor.direccion = direccion;
-        proveedor.notas = notas;
+    if (!id) {
+      const data = new FormData();
+      data.append("proveedor-nombre", nombre);
+      data.append("proveedor-contacto", contacto);
+      data.append("proveedor-email", email);
+      data.append("proveedor-telefono", telefono);
+      data.append("proveedor-direccion", direccion);
+      data.append("proveedor-notas", notas);
 
-        this.productos.forEach((producto) => {
-          if (producto.proveedor === nombreAnterior) {
-            producto.proveedor = nombre;
-          }
+      const response = await fetch("proveedores/guardar", {
+        method: "POST",
+        body: data,
+      });
+
+      if (!response.ok) {
+        this.mostrarNotificacion("Error al guardar el proveedor", "error");
+        return;
+      }
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        this.mostrarNotificacion("Proveedor guardado exitosamente", "success");
+        this.cargarDatosCompletos().then(() => {
+          this.inicializarProveedores();
+          this.actualizarSelectsProveedores();
         });
-        this.guardarProductos();
+      }
+    } else {
+      const data = new FormData();
+      data.append("proveedor-id", id);
+      data.append("proveedor-nombre", nombre);
+      data.append("proveedor-contacto", contacto);
+      data.append("proveedor-email", email);
+      data.append("proveedor-telefono", telefono);
+      data.append("proveedor-direccion", direccion);
+      data.append("proveedor-notas", notas);
 
+      const response = await fetch("proveedores/actualizar", {
+        method: "POST",
+        body: data,
+      });
+
+      if (!response.ok) {
+        this.mostrarNotificacion("Error al actualizar el proveedor", "error");
+        return;
+      }
+
+      const result = await response.json();
+
+      if (result.status === "success") {
         this.mostrarNotificacion(
           "Proveedor actualizado exitosamente",
           "success"
         );
+        this.cargarDatosCompletos().then(() => {
+          this.inicializarProveedores();
+          this.actualizarSelectsProveedores();
+        });
       }
-    } else {
-      const nuevoProveedor = {
-        id: Date.now().toString(),
-        nombre,
-        contacto,
-        email,
-        telefono,
-        direccion,
-        notas,
-        activo: true,
-        fechaRegistro: new Date().toISOString(),
-      };
-      this.proveedores.push(nuevoProveedor);
-      this.mostrarNotificacion("Proveedor creado exitosamente", "success");
     }
-
-    this.renderizarProveedores();
-    this.actualizarSelectsProveedores();
 
     const modal = document.getElementById("proveedor-modal");
     if (modal) modal.classList.remove("show");
@@ -2155,6 +2351,7 @@ class InventarioApp {
     this.renderizarClientes();
     this.inicializarBusquedaClientes();
     this.inicializarModalCliente();
+    this.inicializarConfirmacionCliente();
   }
 
   renderizarClientes(filtro = "") {
@@ -2180,7 +2377,6 @@ class InventarioApp {
       .map(
         (cliente) => `
       <tr>
-        <td>#${cliente.id}</td>
         <td>${cliente.nombre}</td>
         <td>${cliente.email}</td>
         <td>${cliente.telefono}</td>
@@ -2260,8 +2456,7 @@ class InventarioApp {
     const cliente = this.clientes.find((c) => c.id === id);
     if (!cliente) return;
 
-    this.editingClienteId = id;
-
+    document.getElementById("cliente-id").value = cliente.id;
     document.getElementById("cliente-nombre").value = cliente.nombre;
     document.getElementById("cliente-email").value = cliente.email;
     document.getElementById("cliente-telefono").value = cliente.telefono;
@@ -2276,16 +2471,71 @@ class InventarioApp {
   }
 
   eliminarCliente(id) {
-    if (!confirm("¿Está seguro de eliminar este cliente?")) return;
+    const cliente = this.clientes.find((c) => c.id === id);
+    if (!cliente) return;
 
-    this.clientes = this.clientes.filter((c) => c.id !== id);
-    this.guardarClientes();
-    this.renderizarClientes();
-    this.actualizarSelectClientes();
-    this.mostrarNotificacion("Cliente eliminado exitosamente", "success");
+    document.getElementById("confirmacion-id").value = cliente.id;
+
+    const modal = document.getElementById("confirmacion-modal");
+    if (modal) modal.classList.add("show");
   }
 
-  guardarCliente() {
+  inicializarConfirmacionCliente() {
+    const modal = document.getElementById("confirmacion-modal");
+    const confirmarBtn = document.getElementById("confirmacion-confirm");
+    const closeBtn = document.getElementById("confirmacion-close");
+    const cancelarBtn = document.getElementById("confirmacion-cancel");
+
+    if (cancelarBtn) {
+      cancelarBtn.onclick = () => {
+        modal.classList.remove("show");
+      };
+    }
+
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        modal.classList.remove("show");
+      };
+    }
+
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          modal.classList.remove("show");
+        }
+      });
+    }
+
+    if (confirmarBtn) {
+      confirmarBtn.onclick = async () => {
+        const data = new FormData();
+        const id = document.getElementById("confirmacion-id").value;
+        data.append("confirmacion-id", id);
+
+        const response = await fetch("clientes/eliminar", {
+          method: "POST",
+          body: data,
+        });
+
+        if (!response.ok) {
+          this.mostrarNotificacion("Error al eliminar el cliente", "error");
+          modal.classList.remove("show");
+          return;
+        }
+
+        this.mostrarNotificacion("Cliente eliminado exitosamente", "success");
+        this.cargarDatosCompletos().then(() => {
+          this.inicializarClientes();
+          this.actualizarSelectClientes();
+        });
+      };
+    }
+
+    if (modal) modal.classList.remove("show");
+  }
+
+  async guardarCliente() {
+    const id = document.getElementById("cliente-id").value.trim();
     const nombre = document.getElementById("cliente-nombre").value.trim();
     const email = document.getElementById("cliente-email").value.trim();
     const telefono = document.getElementById("cliente-telefono").value.trim();
@@ -2300,34 +2550,62 @@ class InventarioApp {
       return;
     }
 
-    if (this.editingClienteId) {
-      const cliente = this.clientes.find((c) => c.id === this.editingClienteId);
-      if (cliente) {
-        cliente.nombre = nombre;
-        cliente.email = email;
-        cliente.telefono = telefono;
-        cliente.direccion = direccion;
-        cliente.notas = notas;
-        this.mostrarNotificacion("Cliente actualizado exitosamente", "success");
+    if (!id) {
+      const data = new FormData();
+      data.append("cliente-nombre", nombre);
+      data.append("cliente-email", email);
+      data.append("cliente-telefono", telefono);
+      data.append("cliente-direccion", direccion);
+      data.append("cliente-notas", notas);
+
+      const response = await fetch("clientes/guardar", {
+        method: "POST",
+        body: data,
+      });
+
+      if (!response.ok) {
+        this.mostrarNotificacion("Error al guardar el cliente", "error");
+        return;
+      }
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        this.mostrarNotificacion("Cliente guardado exitosamente", "success");
+        this.cargarDatosCompletos().then(() => {
+          this.inicializarClientes();
+          this.actualizarSelectClientes();
+        });
       }
     } else {
-      const nuevoCliente = {
-        id: Date.now().toString(),
-        nombre,
-        email,
-        telefono,
-        direccion,
-        notas,
-        activo: true,
-        fechaRegistro: new Date().toISOString(),
-      };
-      this.clientes.push(nuevoCliente);
-      this.mostrarNotificacion("Cliente creado exitosamente", "success");
-    }
+      const data = new FormData();
+      data.append("cliente-id", id);
+      data.append("cliente-nombre", nombre);
+      data.append("cliente-email", email);
+      data.append("cliente-telefono", telefono);
+      data.append("cliente-direccion", direccion);
+      data.append("cliente-notas", notas);
 
-    this.guardarClientes();
-    this.renderizarClientes();
-    this.actualizarSelectClientes();
+      const response = await fetch("clientes/actualizar", {
+        method: "POST",
+        body: data,
+      });
+
+      if (!response.ok) {
+        this.mostrarNotificacion("Error al actualizar el cliente", "error");
+        return;
+      }
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        this.mostrarNotificacion("Cliente actualizado exitosamente", "success");
+        this.cargarDatosCompletos().then(() => {
+          this.inicializarClientes();
+          this.actualizarSelectClientes();
+        });
+      }
+    }
 
     const modal = document.getElementById("cliente-modal");
     if (modal) modal.classList.remove("show");
@@ -2345,6 +2623,7 @@ class InventarioApp {
     this.renderizarUsuarios();
     this.inicializarBusquedaUsuarios();
     this.inicializarModalUsuario();
+    this.inicializarConfirmacionUsuario();
   }
 
   renderizarUsuarios(filtro = "") {
@@ -2363,9 +2642,9 @@ class InventarioApp {
       .map(
         (usuario) => `
       <tr>
-        <td>#${usuario.id}</td>
         <td>${usuario.nombre}</td>
         <td>${usuario.email}</td>
+        <td>${usuario.telefono}</td>
         <td><span class="role-badge ${usuario.rol}">${
           usuario.rol === "admin" ? "Administrador" : "Usuario"
         }</span></td>
@@ -2444,10 +2723,10 @@ class InventarioApp {
     const usuario = this.usuarios.find((u) => u.id === id);
     if (!usuario) return;
 
-    this.editingUserId = id;
-
+    document.getElementById("user-id").value = usuario.id;
     document.getElementById("user-nombre").value = usuario.nombre;
     document.getElementById("user-email").value = usuario.email;
+    document.getElementById("user-telefono").value = usuario.telefono;
     document.getElementById("user-rol").value = usuario.rol;
     document.getElementById("user-password").value = usuario.password;
 
@@ -2459,46 +2738,130 @@ class InventarioApp {
   }
 
   eliminarUsuario(id) {
-    if (!confirm("¿Está seguro de eliminar este usuario?")) return;
+    const usuario = this.usuarios.find((u) => u.id === id);
+    if (!usuario) return;
 
-    this.usuarios = this.usuarios.filter((u) => u.id !== id);
-    this.guardarUsuarios();
-    this.renderizarUsuarios();
-    this.mostrarNotificacion("Usuario eliminado exitosamente", "success");
+    document.getElementById("confirmacion-id").value = usuario.id;
+
+    const modal = document.getElementById("confirmacion-modal");
+    if (modal) modal.classList.add("show");
   }
 
-  guardarUsuario() {
+  inicializarConfirmacionUsuario() {
+    const modal = document.getElementById("confirmacion-modal");
+    const confirmarBtn = document.getElementById("confirmacion-confirm");
+    const closeBtn = document.getElementById("confirmacion-close");
+    const cancelarBtn = document.getElementById("confirmacion-cancel");
+
+    if (cancelarBtn) {
+      cancelarBtn.onclick = () => {
+        modal.classList.remove("show");
+      };
+    }
+
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        modal.classList.remove("show");
+      };
+    }
+
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          modal.classList.remove("show");
+        }
+      });
+    }
+
+    if (confirmarBtn) {
+      confirmarBtn.onclick = async () => {
+        const data = new FormData();
+        const id = document.getElementById("confirmacion-id").value;
+        data.append("confirmacion-id", id);
+
+        const response = await fetch("usuarios/eliminar", {
+          method: "POST",
+          body: data,
+        });
+
+        if (!response.ok) {
+          this.mostrarNotificacion("Error al eliminar el usuario", "error");
+          modal.classList.remove("show");
+          return;
+        }
+
+        this.mostrarNotificacion("Usuario eliminado exitosamente", "success");
+        this.cargarDatosCompletos().then(() => {
+          this.inicializarUsuarios();
+        });
+      };
+    }
+
+    if (modal) modal.classList.remove("show");
+  }
+
+  async guardarUsuario() {
+    const id = document.getElementById("user-id").value;
     const nombre = document.getElementById("user-nombre").value;
     const email = document.getElementById("user-email").value;
+    const telefono = document.getElementById("user-telefono").value;
     const rol = document.getElementById("user-rol").value;
     const password = document.getElementById("user-password").value;
 
-    if (this.editingUserId) {
-      const usuario = this.usuarios.find((u) => u.id === this.editingUserId);
-      if (usuario) {
-        usuario.nombre = nombre;
-        usuario.email = email;
-        usuario.rol = rol;
-        usuario.password = password;
-        this.mostrarNotificacion("Usuario actualizado exitosamente", "success");
+    if (!id) {
+      const data = new FormData();
+      data.append("user-nombre", nombre);
+      data.append("user-email", email);
+      data.append("user-telefono", telefono);
+      data.append("user-rol", rol);
+      data.append("user-password", password);
+
+      const response = await fetch("usuarios/guardar", {
+        method: "POST",
+        body: data,
+      });
+
+      if (!response.ok) {
+        this.mostrarNotificacion("Error al guardar el usuario", "error");
+        return;
+      }
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        this.mostrarNotificacion("Usuario guardado exitosamente", "success");
+        this.cargarDatosCompletos().then(() => {
+          this.inicializarUsuarios();
+        });
       }
     } else {
-      const nuevoUsuario = {
-        id: Date.now().toString(),
-        nombre,
-        email,
-        telefono: "",
-        password,
-        rol,
-        activo: true,
-        fechaRegistro: new Date().toISOString(),
-      };
-      this.usuarios.push(nuevoUsuario);
-      this.mostrarNotificacion("Usuario creado exitosamente", "success");
-    }
+      const data = new FormData();
+      data.append("user-id", id);
+      data.append("user-nombre", nombre);
+      data.append("user-email", email);
+      data.append("user-telefono", telefono);
+      data.append("user-rol", rol);
+      data.append("user-password", password);
 
-    this.guardarUsuarios();
-    this.renderizarUsuarios();
+      const response = await fetch("usuarios/actualizar", {
+        method: "POST",
+        body: data,
+      });
+
+      if (!response.ok) {
+        this.mostrarNotificacion("Error al actualizar el usuario", "error");
+        return;
+      }
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        this.mostrarNotificacion("Usuario actualizado exitosamente", "success");
+        this.cargarDatosCompletos().then(() => {
+          this.inicializarUsuarios();
+        });
+      }
+    }
 
     const modal = document.getElementById("user-modal");
     if (modal) modal.classList.remove("show");
@@ -2518,12 +2881,10 @@ class InventarioApp {
     const patternVerifyBtn = document.getElementById("verify-pattern-btn");
 
     if (patternClearBtn) {
-      console.log("Inicializando botón de limpiar patrón");
       patternClearBtn.addEventListener("click", () => this.clearPattern());
     }
 
     if (patternVerifyBtn) {
-      console.log("Inicializando botón de verificar patrón");
       patternVerifyBtn.addEventListener("click", () => this.verifyPattern());
     }
 
@@ -2534,6 +2895,7 @@ class InventarioApp {
       });
     }
 
+    console.log(this.usuarioActual);
     this.cargarDatosPerfil();
     this.initializePatternGrid();
   }
@@ -2635,6 +2997,9 @@ class InventarioApp {
     const profileEmail = document.getElementById("profile-email");
     const profileMovimientos = document.getElementById("profile-movimientos");
     const profileFecha = document.getElementById("profile-fecha");
+    const profileUpdate = document.getElementById("update-fecha");
+    const patternUpdate = document.getElementById("profile-pattern");
+    const passwordUpdate = document.getElementById("profile-password");
 
     if (profileAvatar) {
       profileAvatar.textContent = this.usuarioActual.nombre
@@ -2658,8 +3023,27 @@ class InventarioApp {
     }
 
     if (profileFecha) {
-      const fecha = new Date(this.usuarioActual.fechaRegistro);
+      const fecha = new Date(this.usuarioActual.created_at);
       profileFecha.textContent = fecha.toLocaleDateString("es-ES");
+    }
+
+    if (profileUpdate) {
+      const fecha = new Date(this.usuarioActual.updated_at);
+      profileUpdate.textContent = fecha.toLocaleDateString("es-ES");
+    }
+
+    if (patternUpdate) {
+      patternUpdate.textContent = this.usuarioActual.last_token_recovery
+        ? "Ultima actualización de patrón de seguridad: " +
+          this.usuarioActual.last_token_recovery
+        : "No hay patrón de seguridad";
+    }
+
+    if (passwordUpdate) {
+      passwordUpdate.textContent = this.usuarioActual.last_password_change
+        ? "Ultimo cambio de contraseña: " +
+          this.usuarioActual.last_password_change
+        : "No se han realizado cambios";
     }
 
     document.getElementById("profile-nombre").value = this.usuarioActual.nombre;
@@ -2675,45 +3059,8 @@ class InventarioApp {
     const nombre = document.getElementById("profile-nombre").value;
     const email = document.getElementById("profile-email-input").value;
     const telefono = document.getElementById("profile-telefono").value;
-    const password = document.getElementById("profile-password").value;
 
-    this.usuarioActual.nombre = nombre;
-    this.usuarioActual.email = email;
-    this.usuarioActual.telefono = telefono;
-
-    if (password) {
-      this.usuarioActual.password = password;
-    }
-
-    const usuarioIndex = this.usuarios.findIndex(
-      (u) => u.id === this.usuarioActual.id
-    );
-    if (usuarioIndex !== -1) {
-      this.usuarios[usuarioIndex] = this.usuarioActual;
-      this.guardarUsuarios();
-    }
-
-    localStorage.setItem("usuarioActual", JSON.stringify(this.usuarioActual));
-    this.actualizarInfoUsuario();
-    this.cargarDatosPerfil();
-    this.mostrarNotificacion("Perfil actualizado exitosamente", "success");
-
-    const passwordInput = document.getElementById("profile-password");
-    if (passwordInput) {
-      passwordInput.value = "";
-    }
-  }
-
-  mostrarNotificacion(mensaje, tipo) {
-    const notification = document.getElementById("notification");
-    if (!notification) return;
-
-    notification.textContent = mensaje;
-    notification.className = `notification show ${tipo}`;
-
-    setTimeout(() => {
-      notification.classList.remove("show");
-    }, 3000);
+    const data = new FormData();
   }
 }
 

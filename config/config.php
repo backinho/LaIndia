@@ -33,3 +33,6 @@ date_default_timezone_set(date_default_timezone_get());
 
 // Si quieres ver cuál es la zona horaria detectada:
 define('TIMEZONE', date_default_timezone_get());
+
+// Otros ajustes de configuración
+define('ITEMS_PER_PAGE', 10);

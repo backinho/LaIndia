@@ -145,24 +145,29 @@
         <button class="modal-close" id="modal-close">&times;</button>
       </div>
       <form id="user-form">
+        <input type="hidden" name="user-id" id="user-id" />
         <div class="form-group">
           <label>Nombre Completo</label>
-          <input type="text" id="user-nombre" class="form-input" required />
+          <input type="text" name="user-nombre" id="user-nombre" class="form-input" required />
         </div>
         <div class="form-group">
           <label>Email</label>
-          <input type="email" id="user-email" class="form-input" required />
+          <input type="email" name="user-email" id="user-email" class="form-input" required />
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="tel" name="user-telefono" id="user-telefono" class="form-input" required />
         </div>
         <div class="form-group">
           <label>Rol</label>
-          <select id="user-rol" class="form-input" required>
+          <select name="user-rol" id="user-rol" class="form-input" required>
             <option value="usuario">Usuario</option>
             <option value="admin">Administrador</option>
           </select>
         </div>
         <div class="form-group">
           <label>Contraseña</label>
-          <input type="password" id="user-password" class="form-input" required />
+          <input type="password" name="user-password" id="user-password" class="form-input" required />
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" id="modal-cancel">Cancelar</button>
@@ -179,25 +184,26 @@
         <button class="modal-close" id="cliente-modal-close">&times;</button>
       </div>
       <form id="cliente-form">
+        <input type="hidden" name="cliente-id" id="cliente-id" />
         <div class="form-group">
           <label>Nombre Completo</label>
-          <input type="text" id="cliente-nombre" class="form-input" required />
+          <input type="text" name="cliente-nombre" id="cliente-nombre" class="form-input" required />
         </div>
         <div class="form-group">
           <label>Email</label>
-          <input type="email" id="cliente-email" class="form-input" required />
+          <input type="email" name="cliente-email" id="cliente-email" class="form-input" required />
         </div>
         <div class="form-group">
           <label>Teléfono</label>
-          <input type="tel" id="cliente-telefono" class="form-input" required />
+          <input type="tel" name="cliente-telefono" id="cliente-telefono" class="form-input" required />
         </div>
         <div class="form-group">
           <label>Dirección</label>
-          <textarea id="cliente-direccion" class="form-input" rows="3" required></textarea>
+          <textarea name="cliente-direccion" id="cliente-direccion" class="form-input" rows="3" required></textarea>
         </div>
         <div class="form-group">
           <label>Notas (opcional)</label>
-          <textarea id="cliente-notas" class="form-input" rows="2"></textarea>
+          <textarea name="cliente-notas" id="cliente-notas" class="form-input" rows="2"></textarea>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" id="cliente-modal-cancel">Cancelar</button>
@@ -214,6 +220,16 @@
         <button class="modal-close" id="producto-detalle-close">&times;</button>
       </div>
       <div class="producto-detalle-content" id="producto-detalle-content"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="historial-detalle-modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3 id="historial-detalle-titulo">Detalles del movimiento</h3>
+        <button class="modal-close" id="historial-detalle-close">&times;</button>
+      </div>
+      <div class="producto-detalle-content" id="historial-detalle-content"></div>
     </div>
   </div>
 
@@ -252,29 +268,30 @@
         <button class="modal-close" id="proveedor-modal-close">&times;</button>
       </div>
       <form id="proveedor-form">
+        <input type="hidden" name="proveedor-id" id="proveedor-id" />
         <div class="form-group">
           <label>Nombre del Proveedor</label>
-          <input type="text" id="proveedor-nombre" class="form-input" required />
+          <input type="text" name="proveedor-nombre" id="proveedor-nombre" class="form-input" required />
         </div>
         <div class="form-group">
           <label>Persona de Contacto</label>
-          <input type="text" id="proveedor-contacto" class="form-input" required />
+          <input type="text" name="proveedor-contacto" id="proveedor-contacto" class="form-input" required />
         </div>
         <div class="form-group">
           <label>Email</label>
-          <input type="email" id="proveedor-email" class="form-input" required />
+          <input type="email" name="proveedor-email" id="proveedor-email" class="form-input" required />
         </div>
         <div class="form-group">
           <label>Teléfono</label>
-          <input type="tel" id="proveedor-telefono" class="form-input" required />
+          <input type="tel" name="proveedor-telefono" id="proveedor-telefono" class="form-input" required />
         </div>
         <div class="form-group">
           <label>Dirección</label>
-          <textarea id="proveedor-direccion" class="form-input" rows="3" required></textarea>
+          <textarea name="proveedor-direccion" id="proveedor-direccion" class="form-input" rows="3" required></textarea>
         </div>
         <div class="form-group">
           <label>Notas (opcional)</label>
-          <textarea id="proveedor-notas" class="form-input" rows="2"></textarea>
+          <textarea name="proveedor-notas" id="proveedor-notas" class="form-input" rows="2"></textarea>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" id="proveedor-modal-cancel">Cancelar</button>

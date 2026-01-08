@@ -21,7 +21,6 @@
                     <th>Categoría</th>
                     <th>Stock</th>
                     <th>Precio</th>
-                    <th>Proveedor</th>
                     <th>Valor Total</th>
                     <th>Acciones</th>
                 </tr>

@@ -8,9 +8,9 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Nombre</th>
                     <th>Email</th>
+                    <th>Teléfono</th>
                     <th>Rol</th>
                     <th>Estado</th>
                     <th>Acciones</th>

@@ -2,7 +2,6 @@
   <h2 class="card-title">Registrar Entrada de Productos</h2>
   <div class="productos-entrada-container">
     <div class="productos-entrada-list" id="productos-entrada-list"></div>
-    <!-- <button type="button" class="btn btn-secondary" id="add-producto-entrada" style="margin-top: 16px;">+ Agregar Otro Producto</button> -->
     <div class="filter-movimiento-container" style="margin-top: 16px;">
       <button class="btn btn-secondary" id="entrada-options-btn" style="width: 100%">
         <span>+ Agregar Otro Producto</span>

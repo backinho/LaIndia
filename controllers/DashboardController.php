@@ -2,19 +2,22 @@
 
 require_once BASE_PATH . '/models/DashboardModel.php';
 
-class DashboardController {
+class DashboardController
+{
     private $model;
 
-    public function __construct() {
-        /*session_start();
+    public function __construct()
+    {
+        session_start();
         if (!isset($_SESSION['usuario'])) {
             header('Location: /LaIndia');
             exit;
-        }*/
+        }
         $this->model = new DashboardModel();
     }
 
-    public function index() {
+    public function index()
+    {
         $title = 'Dashboard - La India';
 
         // Renderizar la vista

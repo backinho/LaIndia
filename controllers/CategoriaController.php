@@ -8,11 +8,6 @@ class CategoriaController
 
     public function __construct()
     {
-        /*session_start();
-        if (!isset($_SESSION['usuario'])) {
-            header('Location: /LaIndia');
-            exit;
-        }*/
         $this->model = new CategoriaModel();
     }
 

@@ -15,11 +15,16 @@
                     <span class="stat-label">Fecha de registro</span>
                     <span class="stat-value" id="profile-fecha">-</span>
                 </div>
+                <div class="stat-item">
+                    <span class="stat-label">Ultima actualización</span>
+                    <span class="stat-value" id="update-fecha">-</span>
+                </div>
             </div>
         </div>
 
         <div class="settings-card">
-            <h3 class="card-title"><i class="fas fa-shield-alt"></i>Patrón de seguridad</h3>
+            <h3 class="card-title" style="margin-bottom: 0px;"><i class="fas fa-shield-alt"></i>Patrón de seguridad</h3>
+            <p id="profile-pattern" style="margin-bottom: 24px;">usuario@example.com</p>
             <div class="method-content active" id="pattern-method">
                 <div class="password-note">
                     <p><strong>Instrucciones:</strong> Dibuja un patrón de al menos 4 puntos conectados.</p>
@@ -74,7 +79,8 @@
         </div>
 
         <div class="settings-card">
-            <h3 class="card-title"><i class="fas fa-key"></i> Ajustes de credenciales</h3>
+            <h3 class="card-title" style="margin-bottom: 0px;"><i class="fas fa-key"></i> Ajustes de credenciales</h3>
+            <p id="profile-password" style="margin-bottom: 24px;">usuario@example.com</p>
             <form id="credentials-form" class="settings-form">
                 <div class="form-group">
                     <label>Nueva contraseña</label>

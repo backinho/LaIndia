@@ -57,7 +57,7 @@
                 <thead>
                     <tr>
                         <th>Tipo</th>
-                        <th>Producto</th>
+                        <th>Cliente/Proveedor</th>
                         <th>Cantidad</th>
                         <th>Fecha</th>
                     </tr>
