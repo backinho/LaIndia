@@ -38,19 +38,6 @@ function initNavigation() {
     e.preventDefault();
     showForm("login-form");
   });
-
-  document
-    .getElementById("back-to-recovery-1")
-    .addEventListener("click", (e) => {
-      e.preventDefault();
-      showRecoveryStep(1);
-    });
-
-  document.getElementById("logout-btn").addEventListener("click", () => {
-    currentUser = null;
-    showForm("login-form");
-    showNotification("Sesión cerrada exitosamente", "success");
-  });
 }
 
 function showRecoveryStep(step) {
@@ -88,13 +75,107 @@ async function handleLogin(event) {
   }
 }
 
+function handlePattern(event) {
+  event.preventDefault();
+  const modal = document.getElementById("pattern-modal");
+  const modalClose = document.getElementById("pattern-close");
+  const patternClearBtn = document.getElementById("clear-pattern-btn");
+  const patternVerifyBtn = document.getElementById("verify-pattern-btn");
+
+  if (!modal) return;
+
+  modal.classList.add("show");
+
+  modalClose.addEventListener("click", () => {
+    modal.classList.remove("show");
+  });
+
+  if (modal) {
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) {
+        modal.classList.remove("show");
+      }
+    });
+  }
+
+  if (patternClearBtn) {
+    patternClearBtn.addEventListener("click", () => clearPattern());
+  }
+
+  if (patternVerifyBtn) {
+    patternVerifyBtn.onclick = async (e) => {
+      e.preventDefault();
+      const patternPassword = document.getElementById("recovery-email");
+
+      const data = new FormData();
+
+      data.append("patternPassword", patternPassword);
+
+      const response = await fetch("pattern-recovery", {
+        method: "POST",
+        body: data,
+      });
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        showNotification("Correo confirmado");
+      }
+    };
+  }
+}
+
 async function init() {
   initTheme();
   initNavigation();
+  initializePatternGrid();
 
   document.getElementById("login").addEventListener("submit", handleLogin);
+  document
+    .getElementById("recovery-step1")
+    .addEventListener("submit", handlePattern);
 
   showForm("login-form");
+}
+
+let methods = {
+  pattern: {
+    name: "Patrón de Desbloqueo",
+    icon: "fa-draw-polygon",
+    selectedDots: [],
+  },
+};
+
+function initializePatternGrid() {
+  const grid = document.getElementById("patternGrid");
+  grid.innerHTML = "";
+
+  for (let i = 1; i <= 9; i++) {
+    const dot = document.createElement("div");
+    dot.className = "pattern-dot";
+    dot.dataset.id = i;
+    dot.textContent = i;
+    dot.addEventListener("click", () => selectDot(i));
+    grid.appendChild(dot);
+  }
+}
+
+function selectDot(dotId) {
+  const dots = methods.pattern.selectedDots;
+  if (!dots.includes(dotId)) {
+    dots.push(dotId);
+    document
+      .querySelector(`.pattern-dot[data-id="${dotId}"]`)
+      .classList.add("selected");
+  }
+  console.log(methods.pattern.selectedDots);
+}
+
+function clearPattern() {
+  methods.pattern.selectedDots = [];
+  document.querySelectorAll(".pattern-dot").forEach((dot) => {
+    dot.classList.remove("selected");
+  });
 }
 
 init();

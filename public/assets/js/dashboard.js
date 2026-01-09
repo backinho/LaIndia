@@ -144,6 +144,16 @@ class InventarioApp {
     }
   }
 
+  mostrarNotificacion(mensaje, tipo) {
+    const notification = document.getElementById("notification");
+    notification.textContent = mensaje;
+    notification.className = `notification show ${tipo}`;
+
+    setTimeout(() => {
+      notification.classList.remove("show");
+    }, 3000);
+  }
+
   inicializar() {
     this.inicializarTema();
     this.inicializarNavegacion();
@@ -333,6 +343,16 @@ class InventarioApp {
     const userButton = document.getElementById("user-button");
     const userMenu = document.querySelector(".user-menu");
     const logout = document.getElementById("logout");
+    const avatar = document.getElementById("user-avatar");
+    const user = document.getElementById("user-name-display");
+
+    if (avatar) {
+      avatar.textContent = this.usuarioActual.nombre.charAt(0).toUpperCase();
+    }
+
+    if (user) {
+      user.textContent = this.usuarioActual.nombre;
+    }
 
     if (userButton) {
       userButton.addEventListener("click", (e) => {
@@ -2877,6 +2897,7 @@ class InventarioApp {
 
   inicializarPerfil() {
     const profileForm = document.getElementById("profile-form");
+    const credencialsForm = document.getElementById("credentials-form");
     const patternClearBtn = document.getElementById("clear-pattern-btn");
     const patternVerifyBtn = document.getElementById("verify-pattern-btn");
 
@@ -2885,17 +2906,26 @@ class InventarioApp {
     }
 
     if (patternVerifyBtn) {
-      patternVerifyBtn.addEventListener("click", () => this.verifyPattern());
-    }
-
-    if (profileForm) {
-      profileForm.addEventListener("submit", (e) => {
+      patternVerifyBtn.addEventListener("click", (e) => {
         e.preventDefault();
-        this.guardarPerfil();
+        this.verifyPattern();
       });
     }
 
-    console.log(this.usuarioActual);
+    if (profileForm) {
+      profileForm.onclick = async (e) => {
+        e.preventDefault();
+        this.guardarPerfil();
+      };
+    }
+
+    if (credencialsForm) {
+      credencialsForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        this.inicializarConfirmacionCrendenciales();
+      });
+    }
+
     this.cargarDatosPerfil();
     this.initializePatternGrid();
   }
@@ -2905,7 +2935,6 @@ class InventarioApp {
       name: "Patrón de Desbloqueo",
       icon: "fa-draw-polygon",
       selectedDots: [],
-      originalPattern: [1, 2, 5, 8, 7, 4], // Ejemplo
     },
   };
 
@@ -2931,6 +2960,7 @@ class InventarioApp {
         .querySelector(`.pattern-dot[data-id="${dotId}"]`)
         .classList.add("selected");
     }
+    console.log(this.methods.pattern.selectedDots);
   }
 
   clearPattern() {
@@ -2943,7 +2973,6 @@ class InventarioApp {
 
   verifyPattern() {
     const pattern = this.methods.pattern.selectedDots.join("");
-    const original = this.methods.pattern.originalPattern.join("");
     const patternModal = document.getElementById("pattern-confirmacion");
 
     patternModal.classList.add("show");
@@ -2966,27 +2995,39 @@ class InventarioApp {
       patternModal.classList.remove("show");
     });
 
-    patternModalVerify.addEventListener("click", () => {
-      if (pattern === original && pattern.length >= 4) {
-        this.mostrarNotificacion(
-          "Patrón correcto. Acceso concedido.",
-          "success"
-        );
-        setTimeout(() => {
-          this.clearPattern();
-        }, 2000);
-        // Aquí proceder con la recuperación
-      } else {
-        this.mostrarNotificacion(
-          "Patrón incorrecto. Inténtalo de nuevo.",
-          "error"
-        );
-        setTimeout(() => {
-          patternModal.classList.remove("show");
-          this.clearPattern();
-        }, 2000);
+    patternModalVerify.onclick = async () => {
+      const patternPassword = document.getElementById("pattern-password").value;
+      const data = new FormData();
+      console.log(pattern);
+      console.log(patternPassword);
+      data.append("pattern-password", patternPassword);
+      data.append("pattern", pattern);
+
+      const response = await fetch("perfil/actualizarPatron", {
+        method: "POST",
+        body: data,
+      });
+
+      console.log(response);
+
+      if (!response.ok) {
+        this.mostrarNotificacion("Error al actualizar el patrón", "error");
+        return;
       }
-    });
+
+      const result = await response.json();
+
+      console.log(result);
+
+      if (result.status === "success") {
+        this.mostrarNotificacion("Patrón actualizado exitosamente", "success");
+        this.inicializarPerfil();
+        this.clearPattern();
+        patternModal.classList.remove("show");
+      } else {
+        this.mostrarNotificacion(result.message, "error");
+      }
+    };
   }
 
   cargarDatosPerfil() {
@@ -3053,7 +3094,7 @@ class InventarioApp {
       this.usuarioActual.telefono || "";
   }
 
-  guardarPerfil() {
+  async guardarPerfil() {
     if (!this.usuarioActual) return;
 
     const nombre = document.getElementById("profile-nombre").value;
@@ -3061,6 +3102,119 @@ class InventarioApp {
     const telefono = document.getElementById("profile-telefono").value;
 
     const data = new FormData();
+    data.append("profile-nombre", nombre);
+    data.append("profile-email-input", email);
+    data.append("profile-telefono", telefono);
+
+    const response = await fetch("perfil/actualizarDatos", {
+      method: "POST",
+      body: data,
+    });
+
+    console.log(response);
+
+    if (!response.ok) {
+      console.error("Error al actualizar los datos del perfil");
+      return;
+    }
+
+    const result = await response.json();
+
+    if (result.status === "success") {
+      this.mostrarNotificacion("Perfil actualizado correctamente", "success");
+      this.cargarDatosCompletos().then(() => {
+        this.inicializarPerfil();
+      });
+    }
+  }
+
+  inicializarConfirmacionCrendenciales() {
+    const modal = document.getElementById("confirmacion-modal");
+    if (!modal) return;
+
+    modal.classList.add("show");
+
+    const modalClose = document.getElementById("confirmacion-close");
+    const modalCancel = document.getElementById("confirmacion-cancel");
+    const modalVerify = document.getElementById("confirmacion-confirm");
+
+    modalClose.addEventListener("click", () => {
+      modal.classList.remove("show");
+    });
+
+    modalCancel.addEventListener("click", () => {
+      modal.classList.remove("show");
+    });
+
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          modal.classList.remove("show");
+        }
+      });
+    }
+
+    if (modalVerify) {
+      modalVerify.onclick = async () => {
+        const nuevaPassword = document.getElementById(
+          "profile-nueva-contrasena"
+        );
+        const confirmarPassword = document.getElementById(
+          "profile-confirmar-contrasena"
+        );
+        const actualPassword = document.getElementById(
+          "profile-contrasena-actual"
+        );
+
+        const data = new FormData();
+        data.append("profile-nueva-contrasena", nuevaPassword.value);
+        data.append("profile-contrasena-actual", actualPassword.value);
+        console.log("Verificar");
+
+        if (nuevaPassword.value !== confirmarPassword.value) {
+          this.mostrarNotificacion("Las contraseñas no coinciden", "error");
+          return;
+        }
+
+        if (actualPassword.value === nuevaPassword.value) {
+          this.mostrarNotificacion(
+            "La contraseña actual es igual a la nueva",
+            "error"
+          );
+          return;
+        }
+
+        const response = await fetch("perfil/actualizarCredenciales", {
+          method: "POST",
+          body: data,
+        });
+
+        console.log(response);
+
+        if (!response.ok) {
+          console.error("Error al actualizar las credenciales");
+          return;
+        }
+
+        const result = await response.json();
+
+        console.log(result);
+
+        if (result.status === "success") {
+          this.mostrarNotificacion(
+            "Credenciales actualizadas correctamente",
+            "success"
+          );
+          this.cargarDatosCompletos().then(() => {
+            this.inicializarPerfil();
+          });
+        } else {
+          this.mostrarNotificacion(result.message, "error");
+        }
+
+        modal.classList.remove("show");
+      };
+    }
   }
 }
 

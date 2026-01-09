@@ -52,21 +52,8 @@
         </div>
       </form>
 
-      <!-- Paso 2: Responder pregunta de seguridad -->
-      <form id="recovery-step2" class="recovery-step">
-        <p id="recovery-question-display" class="question-display"></p>
-        <div class="input-group">
-          <label for="recovery-answer">Tu Respuesta</label>
-          <input type="text" id="recovery-answer" required autocomplete="off" />
-        </div>
-        <button type="submit" class="btn btn-primary">Verificar</button>
-        <div class="links">
-          <a href="#" id="back-to-recovery-1">Atrás</a>
-        </div>
-      </form>
-
       <!-- Paso 3: Nueva contraseña -->
-      <form id="recovery-step3" class="recovery-step">
+      <form id="recovery-step2" class="recovery-step">
         <div class="input-group">
           <label for="new-password">Nueva Contraseña</label>
           <input type="password" id="new-password" required autocomplete="new-password" />
@@ -79,11 +66,30 @@
       </form>
     </div>
 
-    <!-- Dashboard (después del login) -->
-    <div id="dashboard" class="form-container">
-      <h1>¡Bienvenido!</h1>
-      <p id="user-email-display" class="user-info"></p>
-      <button id="logout-btn" class="btn btn-secondary">Cerrar Sesión</button>
+    <div class="modal" id="pattern-modal">
+      <div class="modal-content" style="padding: 20px;">
+        <div class="modal-header">
+          <h3 id="pattern-titulo">Patrón de Seguridad</h3>
+          <button class="modal-close" id="pattern-close">&times;</button>
+        </div>
+        <div class="pattern-container">
+          <div class="pattern-grid" id="patternGrid">
+            <!-- Los puntos se generan con JavaScript -->
+          </div>
+
+          <div class="controls" style="display: flex; width: 100%; gap: 10px; padding: 0px 34px;">
+            <button class="btn btn-primary" id="clear-pattern-btn" style="flex: 1; min-width: 0; white-space: nowrap; text-align: center;">
+              <i class="fas fa-undo"></i> Limpiar
+            </button>
+            <button class="btn btn-primary" id="verify-pattern-btn" style="flex: 1; min-width: 0; white-space: nowrap; text-align: center;">
+              <i class="fas fa-check"></i> Verificar Patrón
+            </button>
+          </div>
+        </div>
+        <div class="password-note">
+          <strong>Nota:</strong> Ingrese su patron de seguridad para poder recuperar su contraseña.
+        </div>
+      </div>
     </div>
 
     <!-- Mensajes de notificación -->
