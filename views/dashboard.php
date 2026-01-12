@@ -321,6 +321,86 @@
     </div>
   </div>
 
+  <div class="modal" id="confirmacion-categoria-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="confirmacion-titulo">Confirmar Acción</h3>
+        <button class="modal-close" id="confirmacion-categoria-close">&times;</button>
+      </div>
+      <form id="confirmacion-categoria-form">
+        <input type="hidden" id="confirmacion-categoria-id" name="confirmacion-id">
+        <p>¿Seguro de confirmar la acción?</p>
+        <div class="password-note">
+          <strong>Advertencia:</strong> Esta acción es irreversible. Por favor, confirme que desea proceder.
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="confirmacion-categoria-cancel">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="confirmacion-proveedor-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="confirmacion-titulo">Confirmar Acción</h3>
+        <button class="modal-close" id="confirmacion-proveedor-close">&times;</button>
+      </div>
+      <form id="confirmacion-proveedor-form">
+        <input type="hidden" id="confirmacion-proveedor-id" name="confirmacion-id">
+        <p>¿Seguro de confirmar la acción?</p>
+        <div class="password-note">
+          <strong>Advertencia:</strong> Esta acción es irreversible. Por favor, confirme que desea proceder.
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="confirmacion-proveedor-cancel">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="confirmacion-clientes-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="confirmacion-clientes-titulo">Confirmar Acción</h3>
+        <button class="modal-close" id="confirmacion-clientes-close">&times;</button>
+      </div>
+      <form id="confirmacion-clientes-form">
+        <input type="hidden" id="confirmacion-clientes-id" name="confirmacion-id">
+        <p>¿Seguro de confirmar la acción?</p>
+        <div class="password-note">
+          <strong>Advertencia:</strong> Esta acción es irreversible. Por favor, confirme que desea proceder.
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="confirmacion-clientes-cancel">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="confirmacion-usuarios-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="confirmacion-titulo">Confirmar Acción</h3>
+        <button class="modal-close" id="confirmacion-usuarios-close">&times;</button>
+      </div>
+      <form id="confirmacion-usuarios-form">
+        <input type="hidden" id="confirmacion-usuarios-id" name="confirmacion-id">
+        <p>¿Seguro de confirmar la acción?</p>
+        <div class="password-note">
+          <strong>Advertencia:</strong> Esta acción es irreversible. Por favor, confirme que desea proceder.
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="confirmacion-usuarios-cancel">Cancelar</button>
+          <button type="button" class="btn btn-primary">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="modal" id="pattern-confirmacion">
     <div class="modal-content">
       <div class="modal-header">

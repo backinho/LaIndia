@@ -20,4 +20,13 @@ class HomeModel
         $response = $stmt->fetch(PDO::FETCH_ASSOC);
         return $response;
     }
+
+    public function resetPassword($email, $password)
+    {
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $this->db->prepare("UPDATE usuarios SET password = :password WHERE email = :email");
+        $stmt->bindParam(':password', $passwordHash);
+        $stmt->bindParam(':email', $email);
+        return $stmt->execute();
+    }
 }

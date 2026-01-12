@@ -47,7 +47,7 @@ class UsuarioController
             $teleono = $_POST['user-telefono'];
             $password = $_POST['user-password'];
             $rol = $_POST['user-rol'];
-            $passwordHash = password_hash($password, PASSWORD_BCRYPT);
+            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
             $response = $this->model->guardarUsuario($nombre, $email, $teleono, $passwordHash, $rol);
 

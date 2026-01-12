@@ -1,3 +1,7 @@
+if (!window.myAppTempVars) {
+  window.myAppTempVars = {};
+}
+
 function showNotification(message, type = "success") {
   const notification = document.getElementById("notification");
   notification.textContent = message;
@@ -52,8 +56,6 @@ async function handleLogin(event) {
   const email = document.getElementById("login-email").value;
   const password = document.getElementById("login-password").value;
 
-  console.log("Attempting login with:", email);
-
   const data = new FormData();
   data.append("login-email", email);
   data.append("login-password", password);
@@ -70,6 +72,39 @@ async function handleLogin(event) {
     setTimeout(() => {
       window.location.href = "/LaIndia/dashboard";
     }, 1000);
+  } else {
+    showNotification(result.message, "error");
+  }
+}
+
+async function handleRecovery(event) {
+  event.preventDefault();
+  const newPassword = document.getElementById("new-password").value;
+  const newPasswordConf = document.getElementById("confirm-new-password").value;
+  const recoveryEmail = window.myAppTempVars.tempData?.email;
+
+  if (newPassword !== newPasswordConf) {
+    showNotification("Las contraseñas deben ser iguales", "error");
+    return;
+  }
+
+  const data = new FormData();
+  data.append("email", recoveryEmail);
+  data.append("password", newPassword);
+
+  const response = await fetch("reset", {
+    method: "POST",
+    body: data,
+  });
+
+  const result = await response.json();
+
+  if (result.status === true) {
+    showNotification("Contraseña reestablecida, redirigiendo...");
+    delete window.myAppTempVars.tempData;
+    setTimeout(() => {
+      showForm("login-form");
+    }, 1500);
   } else {
     showNotification(result.message, "error");
   }
@@ -105,11 +140,15 @@ function handlePattern(event) {
   if (patternVerifyBtn) {
     patternVerifyBtn.onclick = async (e) => {
       e.preventDefault();
-      const patternPassword = document.getElementById("recovery-email");
+      const patternEmail = document.getElementById("recovery-email").value;
+      const pattern = methods.pattern.selectedDots.join("");
 
       const data = new FormData();
 
-      data.append("patternPassword", patternPassword);
+      window.myAppTempVars.tempData = { email: patternEmail };
+
+      data.append("patternEmail", patternEmail);
+      data.append("pattern", pattern);
 
       const response = await fetch("pattern-recovery", {
         method: "POST",
@@ -118,8 +157,17 @@ function handlePattern(event) {
 
       const result = await response.json();
 
-      if (result.status === "success") {
-        showNotification("Correo confirmado");
+      if (result.status === true) {
+        showNotification("Usuario confirmado, continuando...", "success");
+        modal.classList.remove("show");
+        setTimeout(() => {
+          showRecoveryStep(2);
+        }, 1500);
+      } else {
+        showNotification(result.message, "error");
+        clearPattern();
+        modal.classList.remove("show");
+        delete window.myAppTempVars.tempData;
       }
     };
   }
@@ -134,6 +182,9 @@ async function init() {
   document
     .getElementById("recovery-step1")
     .addEventListener("submit", handlePattern);
+  document
+    .getElementById("recovery-step2")
+    .addEventListener("submit", handleRecovery);
 
   showForm("login-form");
 }

@@ -7,6 +7,11 @@ class InventarioApp {
     this.categorias = [];
     this.proveedores = [];
     this.usuarioActual = null;
+    this.categoriaFormListenerAttached = false;
+    this.proveedorFormListenerAttached = false; // Add this flag to prevent multiple event listeners
+    this.clienteFormListenerAttached = false; // Add this flag to prevent multiple event listeners
+    this.usuarioFormListenerAttached = false; // Add this flag to prevent multiple event listeners
+    this.credencialesFormListenerAttached = false; // Add this flag to prevent multiple event listeners
 
     this.cargarDatosCompletos().then(() => {
       this.inicializar();
@@ -27,7 +32,7 @@ class InventarioApp {
 
   async inicializarProductosList() {
     const response = await fetch("productos/listar", {
-      method: "POST",
+      method: "GET",
     });
 
     if (!response.ok) {
@@ -44,7 +49,7 @@ class InventarioApp {
 
   async inicializarCategoriasList() {
     const response = await fetch("categorias/listar", {
-      method: "POST",
+      method: "GET",
     });
 
     if (!response.ok) {
@@ -61,7 +66,7 @@ class InventarioApp {
 
   async inicializarMovimientosList() {
     const response = await fetch("movimientos/listar", {
-      method: "POST",
+      method: "GET",
     });
 
     if (!response.ok) {
@@ -78,7 +83,7 @@ class InventarioApp {
 
   async inicializarProveedoresList() {
     const response = await fetch("proveedores/listar", {
-      method: "POST",
+      method: "GET",
     });
 
     if (!response.ok) {
@@ -95,7 +100,7 @@ class InventarioApp {
 
   async inicializarClientesList() {
     const response = await fetch("clientes/listar", {
-      method: "POST",
+      method: "GET",
     });
 
     if (!response.ok) {
@@ -112,7 +117,7 @@ class InventarioApp {
 
   async inicializarUsuariosList() {
     const response = await fetch("usuarios/listar", {
-      method: "POST",
+      method: "GET",
     });
 
     if (!response.ok) {
@@ -129,7 +134,7 @@ class InventarioApp {
 
   async inicializarUsuarioActivo() {
     const response = await fetch("usuarios/listarActivo", {
-      method: "POST",
+      method: "GET",
     });
 
     if (!response.ok) {
@@ -1218,9 +1223,11 @@ class InventarioApp {
         this.renderDefaultEntradaItem();
 
         // Recargar datos
-        await this.cargarDatosCompletos();
-        this.renderizarInventarioCompleto();
-        this.renderizarResumen();
+        await this.cargarDatosCompletos().then(() => {
+          this.renderizarInventarioCompleto();
+          this.renderizarResumen();
+          this.renderizarHistorial();
+        });
       } else {
         this.mostrarNotificacion(
           result.message || "Error al registrar la entrada",
@@ -1545,10 +1552,12 @@ class InventarioApp {
         document.getElementById("salida-cliente-select").value = "";
 
         // Recargar datos
-        await this.cargarDatosCompletos();
-        this.renderizarInventarioCompleto();
-        this.renderizarResumen();
-        this.actualizarSelectProductos();
+        await this.cargarDatosCompletos().then(() => {
+          this.renderizarInventarioCompleto();
+          this.renderizarResumen();
+          this.actualizarSelectProductos();
+          this.renderizarHistorial();
+        });
       } else {
         this.mostrarNotificacion(
           result.message || "Error al registrar la salida",
@@ -1729,7 +1738,7 @@ class InventarioApp {
       modal.classList.add("show");
     }
 
-    const closeBtn = document.getElementById("producto-detalle-close");
+    const closeBtn = document.getElementById("historial-detalle-close");
     if (closeBtn) {
       closeBtn.onclick = () => {
         if (modal) modal.classList.remove("show");
@@ -1851,6 +1860,7 @@ class InventarioApp {
         this.editingCategoriaId = null;
         this.limpiarFormularioCategoria();
         const modalTitle = document.getElementById("categoria-modal-title");
+        document.getElementById("categoria-id").value = "";
         if (modalTitle) modalTitle.textContent = "Añadir Categoría";
         if (modal) modal.classList.add("show");
       });
@@ -1876,11 +1886,89 @@ class InventarioApp {
       });
     }
 
-    if (categoriaForm) {
-      categoriaForm.addEventListener("submit", (e) => {
+    if (categoriaForm && !this.categoriaFormListenerAttached) {
+      // Check flag before adding listener
+      categoriaForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        this.guardarCategoria();
+        const id = document.getElementById("categoria-id").value;
+        const nombre = document.getElementById("categoria-nombre").value.trim();
+        const codigo = document.getElementById("categoria-codigo").value.trim();
+        const descripcion = document
+          .getElementById("categoria-descripcion")
+          .value.trim();
+
+        const data = new FormData();
+        data.append("categoria-nombre", nombre);
+        data.append("categoria-codigo", codigo);
+        data.append("categoria-descripcion", descripcion);
+        if (id) {
+          data.append("categoria-id", id);
+        }
+
+        if (!nombre || !codigo || !descripcion) {
+          this.mostrarNotificacion(
+            "Por favor complete todos los campos requeridos",
+            "error"
+          );
+          return;
+        }
+
+        if (!id) {
+          const response = await fetch("categorias/guardar", {
+            method: "POST",
+            body: data,
+          });
+
+          if (!response.ok) {
+            this.mostrarNotificacion("Error al guardar la categoría", "error");
+            return;
+          }
+
+          const result = await response.json();
+
+          if (result.status === true) {
+            this.mostrarNotificacion(
+              "Categoría guardada exitosamente",
+              "success"
+            );
+            this.cargarDatosCompletos().then(() => {
+              this.inicializarCategorias();
+              this.actualizarSelectsCategorias();
+            });
+          }
+        } else {
+          const response = await fetch("categorias/actualizar", {
+            method: "POST",
+            body: data,
+          });
+
+          if (!response.ok) {
+            this.mostrarNotificacion(
+              "Error al actualizar la categoría",
+              "error"
+            );
+            return;
+          }
+
+          const result = await response.json();
+
+          if (result.status === "success") {
+            this.mostrarNotificacion(
+              "Categoría actualizada exitosamente",
+              "success"
+            );
+            this.cargarDatosCompletos().then(() => {
+              this.inicializarCategorias();
+              this.actualizarSelectsCategorias();
+            });
+          }
+        }
+
+        const modal = document.getElementById("categoria-modal");
+        if (modal) modal.classList.remove("show");
+        this.limpiarFormularioCategoria();
       });
+      this.categoriaFormListenerAttached = true; // Set flag after adding listener
     }
   }
 
@@ -1905,17 +1993,19 @@ class InventarioApp {
     const categoria = this.categorias.find((c) => c.id === id);
     if (!categoria) return;
 
-    document.getElementById("confirmacion-id").value = categoria.id;
+    document.getElementById("confirmacion-categoria-id").value = categoria.id;
 
-    const modal = document.getElementById("confirmacion-modal");
+    const modal = document.getElementById("confirmacion-categoria-modal");
     if (modal) modal.classList.add("show");
   }
 
   inicializarConfirmacionCategoria() {
-    const modal = document.getElementById("confirmacion-modal");
-    const confirmarBtn = document.getElementById("confirmacion-confirm");
-    const closeBtn = document.getElementById("confirmacion-close");
-    const cancelarBtn = document.getElementById("confirmacion-cancel");
+    const modal = document.getElementById("confirmacion-categoria-modal");
+    const confirmarBtn = document.getElementById("confirmacion-categoria-form");
+    const closeBtn = document.getElementById("confirmacion-categoria-close");
+    const cancelarBtn = document.getElementById(
+      "confirmacion-categoria-cancel"
+    );
 
     if (cancelarBtn) {
       cancelarBtn.onclick = () => {
@@ -1938,10 +2028,11 @@ class InventarioApp {
     }
 
     if (confirmarBtn) {
-      confirmarBtn.onclick = async () => {
+      confirmarBtn.onclick = async (e) => {
+        e.preventDefault();
         const data = new FormData();
-        const id = document.getElementById("confirmacion-id").value;
-        data.append("confirmacion-id", id);
+        const id = document.getElementById("confirmacion-categoria-id").value;
+        data.append("confirmacion-categoria-id", id);
 
         const response = await fetch("categorias/eliminar", {
           method: "POST",
@@ -1963,80 +2054,6 @@ class InventarioApp {
     }
 
     if (modal) modal.classList.remove("show");
-  }
-
-  async guardarCategoria() {
-    const id = document.getElementById("categoria-id").value;
-    const nombre = document.getElementById("categoria-nombre").value.trim();
-    const codigo = document.getElementById("categoria-codigo").value.trim();
-    const descripcion = document
-      .getElementById("categoria-descripcion")
-      .value.trim();
-
-    const data = new FormData();
-    data.append("categoria-nombre", nombre);
-    data.append("categoria-codigo", codigo);
-    data.append("categoria-descripcion", descripcion);
-    if (id) {
-      data.append("categoria-id", id);
-    }
-
-    if (!nombre || !codigo || !descripcion) {
-      this.mostrarNotificacion(
-        "Por favor complete todos los campos requeridos",
-        "error"
-      );
-      return;
-    }
-
-    if (!id) {
-      const response = await fetch("categorias/guardar", {
-        method: "POST",
-        body: data,
-      });
-
-      if (!response.ok) {
-        this.mostrarNotificacion("Error al guardar la categoría", "error");
-        return;
-      }
-
-      const result = await response.json();
-
-      if (result.status === "success") {
-        this.mostrarNotificacion("Categoría guardada exitosamente", "success");
-        this.cargarDatosCompletos().then(() => {
-          this.inicializarCategorias();
-          this.actualizarSelectsCategorias();
-        });
-      }
-    } else {
-      const response = await fetch("categorias/actualizar", {
-        method: "POST",
-        body: data,
-      });
-
-      if (!response.ok) {
-        this.mostrarNotificacion("Error al actualizar la categoría", "error");
-        return;
-      }
-
-      const result = await response.json();
-
-      if (result.status === "success") {
-        this.mostrarNotificacion(
-          "Categoría actualizada exitosamente",
-          "success"
-        );
-        this.cargarDatosCompletos().then(() => {
-          this.inicializarCategorias();
-          this.actualizarSelectsCategorias();
-        });
-      }
-    }
-
-    const modal = document.getElementById("categoria-modal");
-    if (modal) modal.classList.remove("show");
-    this.limpiarFormularioCategoria();
   }
 
   limpiarFormularioCategoria() {
@@ -2137,6 +2154,7 @@ class InventarioApp {
       addProveedorBtn.addEventListener("click", () => {
         this.editingProveedorId = null;
         this.limpiarFormularioProveedor();
+        document.getElementById("proveedor-id").value = "";
         const modalTitle = document.getElementById("proveedor-modal-title");
         if (modalTitle) modalTitle.textContent = "Añadir Proveedor";
         if (modal) modal.classList.add("show");
@@ -2163,11 +2181,104 @@ class InventarioApp {
       });
     }
 
-    if (proveedorForm) {
-      proveedorForm.addEventListener("submit", (e) => {
+    if (proveedorForm && !this.proveedorFormListenerAttached) {
+      proveedorForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        this.guardarProveedor();
+        const id = document.getElementById("proveedor-id").value.trim();
+        const nombre = document.getElementById("proveedor-nombre").value.trim();
+        const contacto = document
+          .getElementById("proveedor-contacto")
+          .value.trim();
+        const email = document.getElementById("proveedor-email").value.trim();
+        const telefono = document
+          .getElementById("proveedor-telefono")
+          .value.trim();
+        const direccion = document
+          .getElementById("proveedor-direccion")
+          .value.trim();
+        const notas = document.getElementById("proveedor-notas").value.trim();
+
+        if (!nombre || !contacto || !email || !telefono || !direccion) {
+          this.mostrarNotificacion(
+            "Por favor complete todos los campos requeridos",
+            "error"
+          );
+          return;
+        }
+
+        if (!id) {
+          const data = new FormData();
+          data.append("proveedor-nombre", nombre);
+          data.append("proveedor-contacto", contacto);
+          data.append("proveedor-email", email);
+          data.append("proveedor-telefono", telefono);
+          data.append("proveedor-direccion", direccion);
+          data.append("proveedor-notas", notas);
+
+          const response = await fetch("proveedores/guardar", {
+            method: "POST",
+            body: data,
+          });
+
+          if (!response.ok) {
+            this.mostrarNotificacion("Error al guardar el proveedor", "error");
+            return;
+          }
+
+          const result = await response.json();
+
+          if (result.status === "success") {
+            this.mostrarNotificacion(
+              "Proveedor guardado exitosamente",
+              "success"
+            );
+            this.cargarDatosCompletos().then(() => {
+              this.inicializarProveedores();
+              this.actualizarSelectsProveedores();
+            });
+          }
+        } else {
+          const data = new FormData();
+          data.append("proveedor-id", id);
+          data.append("proveedor-nombre", nombre);
+          data.append("proveedor-contacto", contacto);
+          data.append("proveedor-email", email);
+          data.append("proveedor-telefono", telefono);
+          data.append("proveedor-direccion", direccion);
+          data.append("proveedor-notas", notas);
+
+          const response = await fetch("proveedores/actualizar", {
+            method: "POST",
+            body: data,
+          });
+
+          if (!response.ok) {
+            this.mostrarNotificacion(
+              "Error al actualizar el proveedor",
+              "error"
+            );
+            return;
+          }
+
+          const result = await response.json();
+
+          if (result.status === "success") {
+            this.mostrarNotificacion(
+              "Proveedor actualizado exitosamente",
+              "success"
+            );
+            this.cargarDatosCompletos().then(() => {
+              this.inicializarProveedores();
+              this.actualizarSelectsProveedores();
+            });
+          }
+        }
+
+        const modal = document.getElementById("proveedor-modal");
+        if (modal) modal.classList.remove("show");
+        this.limpiarFormularioProveedor();
       });
+      this.proveedorFormListenerAttached = true; // Set flag after adding listener
     }
   }
 
@@ -2194,17 +2305,19 @@ class InventarioApp {
     const proveedor = this.proveedores.find((p) => p.id === id);
     if (!proveedor) return;
 
-    document.getElementById("confirmacion-id").value = proveedor.id;
+    document.getElementById("confirmacion-proveedor-id").value = proveedor.id;
 
-    const modal = document.getElementById("confirmacion-modal");
+    const modal = document.getElementById("confirmacion-proveedor-modal");
     if (modal) modal.classList.add("show");
   }
 
   inicializarConfirmacionProveedor() {
-    const modal = document.getElementById("confirmacion-modal");
-    const confirmarBtn = document.getElementById("confirmacion-confirm");
-    const closeBtn = document.getElementById("confirmacion-close");
-    const cancelarBtn = document.getElementById("confirmacion-cancel");
+    const modal = document.getElementById("confirmacion-proveedor-modal");
+    const confirmarBtn = document.getElementById("confirmacion-proveedor-form");
+    const closeBtn = document.getElementById("confirmacion-proveedor-close");
+    const cancelarBtn = document.getElementById(
+      "confirmacion-proveedor-cancel"
+    );
 
     if (cancelarBtn) {
       cancelarBtn.onclick = () => {
@@ -2227,9 +2340,10 @@ class InventarioApp {
     }
 
     if (confirmarBtn) {
-      confirmarBtn.onclick = async () => {
+      confirmarBtn.onclick = async (e) => {
+        e.preventDefault();
         const data = new FormData();
-        const id = document.getElementById("confirmacion-id").value;
+        const id = document.getElementById("confirmacion-proveedor-id").value;
         data.append("confirmacion-id", id);
 
         const response = await fetch("proveedores/eliminar", {
@@ -2252,92 +2366,6 @@ class InventarioApp {
     }
 
     if (modal) modal.classList.remove("show");
-  }
-
-  async guardarProveedor() {
-    const id = document.getElementById("proveedor-id").value.trim();
-    const nombre = document.getElementById("proveedor-nombre").value.trim();
-    const contacto = document.getElementById("proveedor-contacto").value.trim();
-    const email = document.getElementById("proveedor-email").value.trim();
-    const telefono = document.getElementById("proveedor-telefono").value.trim();
-    const direccion = document
-      .getElementById("proveedor-direccion")
-      .value.trim();
-    const notas = document.getElementById("proveedor-notas").value.trim();
-
-    if (!nombre || !contacto || !email || !telefono || !direccion) {
-      this.mostrarNotificacion(
-        "Por favor complete todos los campos requeridos",
-        "error"
-      );
-      return;
-    }
-
-    if (!id) {
-      const data = new FormData();
-      data.append("proveedor-nombre", nombre);
-      data.append("proveedor-contacto", contacto);
-      data.append("proveedor-email", email);
-      data.append("proveedor-telefono", telefono);
-      data.append("proveedor-direccion", direccion);
-      data.append("proveedor-notas", notas);
-
-      const response = await fetch("proveedores/guardar", {
-        method: "POST",
-        body: data,
-      });
-
-      if (!response.ok) {
-        this.mostrarNotificacion("Error al guardar el proveedor", "error");
-        return;
-      }
-
-      const result = await response.json();
-
-      if (result.status === "success") {
-        this.mostrarNotificacion("Proveedor guardado exitosamente", "success");
-        this.cargarDatosCompletos().then(() => {
-          this.inicializarProveedores();
-          this.actualizarSelectsProveedores();
-        });
-      }
-    } else {
-      const data = new FormData();
-      data.append("proveedor-id", id);
-      data.append("proveedor-nombre", nombre);
-      data.append("proveedor-contacto", contacto);
-      data.append("proveedor-email", email);
-      data.append("proveedor-telefono", telefono);
-      data.append("proveedor-direccion", direccion);
-      data.append("proveedor-notas", notas);
-
-      const response = await fetch("proveedores/actualizar", {
-        method: "POST",
-        body: data,
-      });
-
-      if (!response.ok) {
-        this.mostrarNotificacion("Error al actualizar el proveedor", "error");
-        return;
-      }
-
-      const result = await response.json();
-
-      if (result.status === "success") {
-        this.mostrarNotificacion(
-          "Proveedor actualizado exitosamente",
-          "success"
-        );
-        this.cargarDatosCompletos().then(() => {
-          this.inicializarProveedores();
-          this.actualizarSelectsProveedores();
-        });
-      }
-    }
-
-    const modal = document.getElementById("proveedor-modal");
-    if (modal) modal.classList.remove("show");
-    this.limpiarFormularioProveedor();
   }
 
   limpiarFormularioProveedor() {
@@ -2438,6 +2466,7 @@ class InventarioApp {
       addClienteBtn.addEventListener("click", () => {
         this.editingClienteId = null;
         this.limpiarFormularioCliente();
+        document.getElementById("cliente-id").value = "";
         const modalTitle = document.getElementById("cliente-modal-title");
         if (modalTitle) modalTitle.textContent = "Añadir Cliente";
         if (modal) modal.classList.add("show");
@@ -2464,11 +2493,12 @@ class InventarioApp {
       });
     }
 
-    if (clienteForm) {
+    if (clienteForm && !this.clienteFormListenerAttached) {
       clienteForm.addEventListener("submit", (e) => {
         e.preventDefault();
         this.guardarCliente();
       });
+      this.clienteFormListenerAttached = true; // Set flag after adding listener
     }
   }
 
@@ -2494,17 +2524,17 @@ class InventarioApp {
     const cliente = this.clientes.find((c) => c.id === id);
     if (!cliente) return;
 
-    document.getElementById("confirmacion-id").value = cliente.id;
+    document.getElementById("confirmacion-clientes-id").value = cliente.id;
 
-    const modal = document.getElementById("confirmacion-modal");
+    const modal = document.getElementById("confirmacion-clientes-modal");
     if (modal) modal.classList.add("show");
   }
 
   inicializarConfirmacionCliente() {
-    const modal = document.getElementById("confirmacion-modal");
-    const confirmarBtn = document.getElementById("confirmacion-confirm");
-    const closeBtn = document.getElementById("confirmacion-close");
-    const cancelarBtn = document.getElementById("confirmacion-cancel");
+    const modal = document.getElementById("confirmacion-clientes-modal");
+    const confirmarBtn = document.getElementById("confirmacion-clientes-form");
+    const closeBtn = document.getElementById("confirmacion-clientes-close");
+    const cancelarBtn = document.getElementById("confirmacion-clientes-cancel");
 
     if (cancelarBtn) {
       cancelarBtn.onclick = () => {
@@ -2527,9 +2557,10 @@ class InventarioApp {
     }
 
     if (confirmarBtn) {
-      confirmarBtn.onclick = async () => {
+      confirmarBtn.onclick = async (e) => {
+        e.preventDefault();
         const data = new FormData();
-        const id = document.getElementById("confirmacion-id").value;
+        const id = document.getElementById("confirmacion-clientes-id").value;
         data.append("confirmacion-id", id);
 
         const response = await fetch("clientes/eliminar", {
@@ -2705,6 +2736,7 @@ class InventarioApp {
       addUserBtn.addEventListener("click", () => {
         this.editingUserId = null;
         this.limpiarFormularioUsuario();
+        document.getElementById("user-id").value = "";
         const modalTitle = document.getElementById("modal-title");
         if (modalTitle) modalTitle.textContent = "Añadir Usuario";
         if (modal) modal.classList.add("show");
@@ -2731,11 +2763,12 @@ class InventarioApp {
       });
     }
 
-    if (userForm) {
+    if (userForm && !this.usuarioFormListenerAttached) {
       userForm.addEventListener("submit", (e) => {
         e.preventDefault();
         this.guardarUsuario();
       });
+      this.usuarioFormListenerAttached = true; // Set flag after adding listener
     }
   }
 
@@ -2761,17 +2794,17 @@ class InventarioApp {
     const usuario = this.usuarios.find((u) => u.id === id);
     if (!usuario) return;
 
-    document.getElementById("confirmacion-id").value = usuario.id;
+    document.getElementById("confirmacion-usuarios-id").value = usuario.id;
 
-    const modal = document.getElementById("confirmacion-modal");
+    const modal = document.getElementById("confirmacion-usuarios-modal");
     if (modal) modal.classList.add("show");
   }
 
   inicializarConfirmacionUsuario() {
-    const modal = document.getElementById("confirmacion-modal");
-    const confirmarBtn = document.getElementById("confirmacion-confirm");
-    const closeBtn = document.getElementById("confirmacion-close");
-    const cancelarBtn = document.getElementById("confirmacion-cancel");
+    const modal = document.getElementById("confirmacion-usuarios-modal");
+    const confirmarBtn = document.getElementById("confirmacion-usuarios-form");
+    const closeBtn = document.getElementById("confirmacion-usuarios-close");
+    const cancelarBtn = document.getElementById("confirmacion-usuarios-cancel");
 
     if (cancelarBtn) {
       cancelarBtn.onclick = () => {
@@ -2796,7 +2829,7 @@ class InventarioApp {
     if (confirmarBtn) {
       confirmarBtn.onclick = async () => {
         const data = new FormData();
-        const id = document.getElementById("confirmacion-id").value;
+        const id = document.getElementById("confirmacion-usuarios-id").value;
         data.append("confirmacion-id", id);
 
         const response = await fetch("usuarios/eliminar", {
@@ -2913,17 +2946,18 @@ class InventarioApp {
     }
 
     if (profileForm) {
-      profileForm.onclick = async (e) => {
+      profileForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         this.guardarPerfil();
-      };
+      });
     }
 
-    if (credencialsForm) {
+    if (credencialsForm && !this.credencialesFormListenerAttached) {
       credencialsForm.addEventListener("submit", (e) => {
         e.preventDefault();
         this.inicializarConfirmacionCrendenciales();
       });
+      this.credencialesFormListenerAttached = true; // Set flag after adding listener
     }
 
     this.cargarDatosPerfil();

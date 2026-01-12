@@ -47,7 +47,7 @@ class ProveedorModel
 
     public function eliminarProveedor($id)
     {
-        $stmt = $this->db->prepare("UPDATE proveedores SET activo = 0, deleted_at = NOW() WHERE id = :id");
+        $stmt = $this->db->prepare("DELETE FROM proveedores WHERE id = :id");
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }

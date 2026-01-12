@@ -41,7 +41,7 @@ class CategoriaModel
 
     public function eliminarCategoria($id)
     {
-        $stmt = $this->db->prepare("UPDATE categorias SET activo = 0, deleted_at = NOW() WHERE id = :id");
+        $stmt = $this->db->prepare("DELETE FROM categorias WHERE id = :id");
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }

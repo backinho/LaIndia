@@ -159,15 +159,14 @@ class MovimientoModel
         $producto_id = vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 
         $stmt = $this->db->prepare("
-            INSERT INTO productos (id, codigo, nombre, categoria_id, stock, precio, descripcion, activo) 
-            VALUES (:id, :codigo, :nombre, :categoria_id, :stock, :precio, :descripcion, 1)
+            INSERT INTO productos (id, codigo, nombre, categoria_id, precio, descripcion, activo) 
+            VALUES (:id, :codigo, :nombre, :categoria_id, :precio, :descripcion, 1)
         ");
 
         $stmt->bindParam(':id', $producto_id);
         $stmt->bindParam(':codigo', $producto['codigo']);
         $stmt->bindParam(':nombre', $producto['nombre']);
         $stmt->bindParam(':categoria_id', $producto['categoria_id']);
-        $stmt->bindParam(':stock', $producto['cantidad']);
         $stmt->bindParam(':precio', $producto['precio']);
 
         // Descripción opcional
@@ -200,7 +199,6 @@ class MovimientoModel
             WHERE id = :id
         ");
 
-        $stmt->bindParam(':cantidad', $producto['cantidad']);
         $stmt->bindParam(':precio', $producto['precio']);
         $stmt->bindParam(':id', $producto['id']);
 

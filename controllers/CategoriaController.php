@@ -15,10 +15,10 @@ class CategoriaController
     {
         try {
             $categorias = $this->model->listarCategorias();
-            echo json_encode(['status' => 'success', 'data' => $categorias]);
+            echo json_encode(['status' => true, 'data' => $categorias]);
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['status' => 'error', 'message' => 'Error al listar las categorías.']);
+            echo json_encode(['status' => false, 'message' => 'Error al listar las categorías.']);
         }
     }
 
@@ -26,23 +26,47 @@ class CategoriaController
     {
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Método no permitido');
+                error_log("ERROR: Método no permitido. Se esperaba POST, se recibió: " . $_SERVER['REQUEST_METHOD']);
+                throw new Exception('Método no permitido', 405);
             }
 
-            $nombre = $_POST['categoria-nombre'];
-            $codigo = $_POST['categoria-codigo'];
-            $descripcion = $_POST['categoria-descripcion'];
+            $requiredFields = ['categoria-nombre', 'categoria-codigo', 'categoria-descripcion'];
+            foreach ($requiredFields as $field) {
+                if (!isset($_POST[$field])) {
+                    throw new Exception("Campo requerido faltante: {$field}", 400);
+                }
+            }
+
+            $nombre = trim($_POST['categoria-nombre']);
+            $codigo = trim($_POST['categoria-codigo']);
+            $descripcion = trim($_POST['categoria-descripcion']);
+
+            if (empty($nombre)) {
+                throw new Exception('El nombre de la categoría es requerido', 400);
+            }
 
             $response = $this->model->guardarCategoria($nombre, $codigo, $descripcion);
 
             if ($response === false) {
-                throw new Exception('No se pudo guardar la categoría');
+                throw new Exception('No se pudo guardar la categoría en la base de datos');
             }
 
-            echo json_encode(['status' => 'success', 'message' => 'Categoría guardada exitosamente.']);
+            $jsonResponse = json_encode([
+                'status' => true,
+                'message' => 'Categoría guardada exitosamente.',
+            ]);
+
+            if ($jsonResponse === false) {
+                throw new Exception('Error al generar respuesta JSON: ' . json_last_error_msg());
+            }
+
+            header('Content-Type: application/json');
+            echo $jsonResponse;
+            exit();
         } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['status' => 'error', 'message' => 'Error al guardar la categoría error 500.']);
+            error_log("ERROR en guardar: " . $e->getMessage() . " - Código: " . $e->getCode());
+            http_response_code($e->getCode() ?: 500);
+            echo json_encode(['status' => false, 'message' => 'Error al guardar la categoría', 'code' => $e->getCode()]);
         }
     }
 
@@ -76,7 +100,7 @@ class CategoriaController
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception('Método no permitido');
             }
-            $id = $_POST['confirmacion-id'];
+            $id = $_POST['confirmacion-categoria-id'];
 
             $response = $this->model->eliminarCategoria($id);
 

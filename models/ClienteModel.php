@@ -45,7 +45,7 @@ class ClienteModel
 
     public function eliminarCliente($id)
     {
-        $stmt = $this->db->prepare("UPDATE clientes SET activo = 0, deleted_at = NOW() WHERE id = :id");
+        $stmt = $this->db->prepare("DELETE FROM clientes WHERE id = :id");
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }

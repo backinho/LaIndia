@@ -14,12 +14,6 @@ class MovimientoController
     public function listar()
     {
         try {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                http_response_code(405);
-                echo json_encode(['status' => false, 'message' => 'Método no permitido']);
-                return;
-            }
-
             $movimientos = $this->model->listarMovimientosCompletos();
             echo json_encode(['status' => 'success', 'data' => $movimientos]);
         } catch (Exception $e) {
