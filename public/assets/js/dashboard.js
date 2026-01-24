@@ -453,14 +453,14 @@ class InventarioApp {
           producto.stock === 0
             ? "error"
             : producto.stock < 5
-            ? "warning"
-            : "info";
+              ? "warning"
+              : "info";
         const estadoTexto =
           producto.stock === 0
             ? "Sin stock"
             : producto.stock < 5
-            ? "Crítico"
-            : "Bajo";
+              ? "Crítico"
+              : "Bajo";
 
         return `
         <tr>
@@ -502,9 +502,8 @@ class InventarioApp {
 
         return `
         <tr>
-          <td><span class="status-badge ${movimiento.tipo}">${
-          movimiento.tipo === "entrada" ? "Entrada" : "Salida"
-        }</span></td>
+          <td><span class="status-badge ${movimiento.tipo}">${movimiento.tipo === "entrada" ? "Entrada" : "Salida"
+          }</span></td>
           <td>${cliente_proveedor}</td>
           <td>${movimiento.cantidad_total}</td>
           <td>${fechaFormateada}</td>
@@ -557,8 +556,7 @@ class InventarioApp {
         (p) =>
           p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
           p.codigo.toLowerCase().includes(filtro.toLowerCase()) ||
-          p.categoria_nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-          p.proveedor_nombre.toLowerCase().includes(filtro.toLowerCase())
+          p.categoria_nombre.toLowerCase().includes(filtro.toLowerCase())
       );
     }
 
@@ -580,9 +578,8 @@ class InventarioApp {
           <td>$${parseFloat(producto.precio).toFixed(2)}</td>
           <td>$${valorTotal}</td>
           <td>
-            <button class="action-btn" onclick="app.verDetalleProducto('${
-              producto.id
-            }')">Ver Detalle</button>
+            <button class="action-btn" onclick="app.verDetalleProducto('${producto.id
+          }')">Ver Detalle</button>
           </td>
         </tr>
       `;
@@ -732,59 +729,53 @@ class InventarioApp {
           <div class="detalle-item">
             <span class="detalle-label">Precio Unitario</span>
             <span class="detalle-value">$${parseFloat(producto.precio).toFixed(
-              2
-            )}</span>
+        2
+      )}</span>
           </div>
           <div class="detalle-item">
             <span class="detalle-label">Valor Total</span>
             <span class="detalle-value">$${valorTotal}</span>
           </div>
-          <div class="detalle-item">
-            <span class="detalle-label">Proveedor</span>
-            <span class="detalle-value">${producto.proveedor_nombre}</span>
-          </div>
         </div>
 
         <div class="movimientos-producto">
           <h4>Historial de Movimientos (${movimientosProducto.length})</h4>
-          ${
-            movimientosProducto.length === 0
-              ? '<p style="color: var(--text-secondary);">No hay movimientos registrados para este producto</p>'
-              : movimientosProducto
-                  .reverse()
-                  .slice(0, 10)
-                  .map((mov) => {
-                    const fecha = new Date(mov.fecha);
-                    const fechaFormateada = fecha.toLocaleString("es-ES");
-                    let cantidad = "";
-                    if (mov.detalles && Array.isArray(mov.detalles)) {
-                      mov.detalles.forEach((detalle) => {
-                        if (detalle.producto_id === productoId) {
-                          cantidad = detalle.cantidad;
-                        }
-                      });
-                    }
-                    if (mov.productos) {
-                      const prodEnMov = mov.productos.find(
-                        (p) => p.id === productoId
-                      );
-                      if (prodEnMov) cantidad = prodEnMov.cantidad;
-                    }
-                    return `
+          ${movimientosProducto.length === 0
+          ? '<p style="color: var(--text-secondary);">No hay movimientos registrados para este producto</p>'
+          : movimientosProducto
+            .reverse()
+            .slice(0, 10)
+            .map((mov) => {
+              const fecha = new Date(mov.fecha);
+              const fechaFormateada = fecha.toLocaleString("es-ES");
+              let cantidad = "";
+              if (mov.detalles && Array.isArray(mov.detalles)) {
+                mov.detalles.forEach((detalle) => {
+                  if (detalle.producto_id === productoId) {
+                    cantidad = detalle.cantidad;
+                  }
+                });
+              }
+              if (mov.productos) {
+                const prodEnMov = mov.productos.find(
+                  (p) => p.id === productoId
+                );
+                if (prodEnMov) cantidad = prodEnMov.cantidad;
+              }
+              return `
                 <div class="movimiento-item">
                   <div class="movimiento-info">
-                    <span class="status-badge ${mov.tipo}">${
-                      mov.tipo === "entrada" ? "Entrada" : "Salida"
-                    }</span>
+                    <span class="status-badge ${mov.tipo}">${mov.tipo === "entrada" ? "Entrada" : "Salida"
+                }</span>
                     <span>${cantidad} unidades</span>
                     <span class="movimiento-fecha">${fechaFormateada}</span>
                   </div>
                   <span>${mov.nombre_usuario}</span>
                 </div>
               `;
-                  })
-                  .join("")
-          }
+            })
+            .join("")
+        }
         </div>
       `;
     }
@@ -1594,11 +1585,10 @@ class InventarioApp {
     if (filtroBusqueda) {
       movimientosFiltrados = movimientosFiltrados.filter((m) => {
         const searchLower = filtroBusqueda.toLowerCase();
+        console.log(m)
         return (
           m.usuario.toLowerCase().includes(searchLower) ||
-          m.detalles.toLowerCase().includes(searchLower) ||
           (m.cliente && m.cliente.toLowerCase().includes(searchLower)) ||
-          (m.proveedor && m.proveedor.toLowerCase().includes(searchLower)) ||
           (m.productoNombre &&
             m.productoNombre.toLowerCase().includes(searchLower))
         );
@@ -1628,17 +1618,15 @@ class InventarioApp {
         return `
         <tr>
           <td>${fechaFormateada}</td>
-          <td><span class="status-badge ${movimiento.tipo}">${
-          movimiento.tipo === "entrada" ? "Entrada" : "Salida"
-        }</span></td>
+          <td><span class="status-badge ${movimiento.tipo}">${movimiento.tipo === "entrada" ? "Entrada" : "Salida"
+          }</span></td>
           <td>${productosTexto}</td>
           <td>${movimiento.nombre_usuario}</td>
           <td>${clienteProveedor}</td>
           <td>${movimiento.valor_total}</td>
           <td>
-            <button class="action-btn" onclick="app.verDetalleHistorial('${
-              movimiento.id
-            }')">Ver Detalle</button>
+            <button class="action-btn" onclick="app.verDetalleHistorial('${movimiento.id
+          }')">Ver Detalle</button>
           </td>
         </tr>
       `;
@@ -1696,40 +1684,38 @@ class InventarioApp {
           <div class="detalle-item">
             <span class="detalle-label">Precio total</span>
             <span class="detalle-value">$${parseFloat(
-              movimiento.valor_total
-            ).toFixed(2)}</span>
+        movimiento.valor_total
+      ).toFixed(2)}</span>
           </div>
         </div>
 
         <div class="movimientos-producto">
           <h4>Historial de Movimientos (${movimientosProducto.length})</h4>
-          ${
-            movimientosProducto.length === 0
-              ? '<p style="color: var(--text-secondary);">No hay movimientos registrados para este producto</p>'
-              : movimientosProducto
-                  .reverse()
-                  .slice(0, 10)
-                  .map((mov) => {
-                    const fecha = new Date(mov.created_at);
-                    const fechaFormateada = fecha.toLocaleString("es-ES");
-                    const precio_total = mov.precio_unitario * mov.cantidad;
-                    return `
+          ${movimientosProducto.length === 0
+          ? '<p style="color: var(--text-secondary);">No hay movimientos registrados para este producto</p>'
+          : movimientosProducto
+            .reverse()
+            .slice(0, 10)
+            .map((mov) => {
+              const fecha = new Date(mov.created_at);
+              const fechaFormateada = fecha.toLocaleString("es-ES");
+              const precio_total = mov.precio_unitario * mov.cantidad;
+              return `
                 <div class="movimiento-item">
                   <div class="movimiento-info">
                     <span>${mov.nombre_producto}</span>
                     <span>${mov.cantidad} unidades</span>
-                    <span class="movimiento-fecha">Precio unitario: ${
-                      mov.precio_unitario
-                    }</span>
+                    <span class="movimiento-fecha">Precio unitario: ${mov.precio_unitario
+                }</span>
                     <span class="movimiento-fecha">Precio total: ${precio_total.toFixed(
-                      2
-                    )}</span>
+                  2
+                )}</span>
                   </div>
                 </div>
               `;
-                  })
-                  .join("")
-          }
+            })
+            .join("")
+        }
         </div>
       `;
     }
@@ -1802,10 +1788,10 @@ class InventarioApp {
 
     const categoriasFiltradas = filtro
       ? this.categorias.filter(
-          (c) =>
-            c.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-            c.descripcion.toLowerCase().includes(filtro.toLowerCase())
-        )
+        (c) =>
+          c.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+          c.descripcion.toLowerCase().includes(filtro.toLowerCase())
+      )
       : this.categorias;
 
     if (categoriasFiltradas.length === 0) {
@@ -1822,16 +1808,13 @@ class InventarioApp {
           <td>${categoria.codigo}</td>
           <td>${categoria.descripcion}</td>
           <td>${categoria.cantidad_productos}</td>
-          <td><span class="status-badge ${
-            categoria.activo ? "activo" : "inactivo"
+          <td><span class="status-badge ${categoria.activo ? "activo" : "inactivo"
           }">${categoria.activo ? "Activo" : "Inactivo"}</span></td>
           <td>
-            <button class="action-btn" onclick="app.editarCategoria('${
-              categoria.id
-            }')">Editar</button>
-            <button class="action-btn delete" onclick="app.eliminarCategoria('${
-              categoria.id
-            }')">Eliminar</button>
+            <button class="action-btn" onclick="app.editarCategoria('${categoria.id
+          }')">Editar</button>
+            <button class="action-btn delete" onclick="app.eliminarCategoria('${categoria.id
+          }')">Eliminar</button>
           </td>
         </tr>
       `;
@@ -2094,12 +2077,12 @@ class InventarioApp {
 
     const proveedoresFiltrados = filtro
       ? this.proveedores.filter(
-          (p) =>
-            p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-            p.contacto.toLowerCase().includes(filtro.toLowerCase()) ||
-            p.email.toLowerCase().includes(filtro.toLowerCase()) ||
-            p.telefono.toLowerCase().includes(filtro.toLowerCase())
-        )
+        (p) =>
+          p.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+          p.contacto.toLowerCase().includes(filtro.toLowerCase()) ||
+          p.email.toLowerCase().includes(filtro.toLowerCase()) ||
+          p.telefono.toLowerCase().includes(filtro.toLowerCase())
+      )
       : this.proveedores;
 
     if (proveedoresFiltrados.length === 0) {
@@ -2117,15 +2100,12 @@ class InventarioApp {
         <td>${proveedor.email}</td>
         <td>${proveedor.telefono}</td>
         <td>${proveedor.direccion}</td>
-        <td><span class="status-badge ${
-          proveedor.activo ? "activo" : "inactivo"
-        }">${proveedor.activo ? "Activo" : "Inactivo"}</span></td>
+        <td><span class="status-badge ${proveedor.activo ? "activo" : "inactivo"
+          }">${proveedor.activo ? "Activo" : "Inactivo"}</span></td>
         <td>
-          <button class="action-btn" onclick="app.editarProveedor('${
-            proveedor.id
+          <button class="action-btn" onclick="app.editarProveedor('${proveedor.id
           }')">Editar</button>
-          <button class="action-btn delete" onclick="app.eliminarProveedor('${
-            proveedor.id
+          <button class="action-btn delete" onclick="app.eliminarProveedor('${proveedor.id
           }')">Eliminar</button>
         </td>
       </tr>
@@ -2408,11 +2388,11 @@ class InventarioApp {
 
     const clientesFiltrados = filtro
       ? this.clientes.filter(
-          (c) =>
-            c.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-            c.email.toLowerCase().includes(filtro.toLowerCase()) ||
-            c.telefono.toLowerCase().includes(filtro.toLowerCase())
-        )
+        (c) =>
+          c.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+          c.email.toLowerCase().includes(filtro.toLowerCase()) ||
+          c.telefono.toLowerCase().includes(filtro.toLowerCase())
+      )
       : this.clientes;
 
     if (clientesFiltrados.length === 0) {
@@ -2429,15 +2409,12 @@ class InventarioApp {
         <td>${cliente.email}</td>
         <td>${cliente.telefono}</td>
         <td>${cliente.direccion}</td>
-        <td><span class="status-badge ${
-          cliente.activo ? "activo" : "inactivo"
-        }">${cliente.activo ? "Activo" : "Inactivo"}</span></td>
+        <td><span class="status-badge ${cliente.activo ? "activo" : "inactivo"
+          }">${cliente.activo ? "Activo" : "Inactivo"}</span></td>
         <td>
-          <button class="action-btn" onclick="app.editarCliente('${
-            cliente.id
+          <button class="action-btn" onclick="app.editarCliente('${cliente.id
           }')">Editar</button>
-          <button class="action-btn delete" onclick="app.eliminarCliente('${
-            cliente.id
+          <button class="action-btn delete" onclick="app.eliminarCliente('${cliente.id
           }')">Eliminar</button>
         </td>
       </tr>
@@ -2683,10 +2660,10 @@ class InventarioApp {
 
     const usuariosFiltrados = filtro
       ? this.usuarios.filter(
-          (u) =>
-            u.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-            u.email.toLowerCase().includes(filtro.toLowerCase())
-        )
+        (u) =>
+          u.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
+          u.email.toLowerCase().includes(filtro.toLowerCase())
+      )
       : this.usuarios;
 
     tbody.innerHTML = usuariosFiltrados
@@ -2696,18 +2673,14 @@ class InventarioApp {
         <td>${usuario.nombre}</td>
         <td>${usuario.email}</td>
         <td>${usuario.telefono}</td>
-        <td><span class="role-badge ${usuario.rol}">${
-          usuario.rol === "admin" ? "Administrador" : "Usuario"
-        }</span></td>
-        <td><span class="status-badge ${
-          usuario.activo ? "activo" : "inactivo"
-        }">${usuario.activo ? "Activo" : "Inactivo"}</span></td>
+        <td><span class="role-badge ${usuario.rol}">${usuario.rol === "admin" ? "Administrador" : "Usuario"
+          }</span></td>
+        <td><span class="status-badge ${usuario.activo ? "activo" : "inactivo"
+          }">${usuario.activo ? "Activo" : "Inactivo"}</span></td>
         <td>
-          <button class="action-btn" onclick="app.editarUsuario('${
-            usuario.id
+          <button class="action-btn" onclick="app.editarUsuario('${usuario.id
           }')">Editar</button>
-          <button class="action-btn delete" onclick="app.eliminarUsuario('${
-            usuario.id
+          <button class="action-btn delete" onclick="app.eliminarUsuario('${usuario.id
           }')">Eliminar</button>
         </td>
       </tr>
@@ -3110,14 +3083,14 @@ class InventarioApp {
     if (patternUpdate) {
       patternUpdate.textContent = this.usuarioActual.last_token_recovery
         ? "Ultima actualización de patrón de seguridad: " +
-          this.usuarioActual.last_token_recovery
+        this.usuarioActual.last_token_recovery
         : "No hay patrón de seguridad";
     }
 
     if (passwordUpdate) {
       passwordUpdate.textContent = this.usuarioActual.last_password_change
         ? "Ultimo cambio de contraseña: " +
-          this.usuarioActual.last_password_change
+        this.usuarioActual.last_password_change
         : "No se han realizado cambios";
     }
 

@@ -65,20 +65,16 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background: repeating-linear-gradient(
-      0deg,
+  background: repeating-linear-gradient(0deg,
       var(--bg-pattern) 0px,
       transparent 1px,
       transparent 2px,
-      var(--bg-pattern) 3px
-    ),
-    repeating-linear-gradient(
-      90deg,
+      var(--bg-pattern) 3px),
+    repeating-linear-gradient(90deg,
       var(--bg-pattern) 0px,
       transparent 1px,
       transparent 2px,
-      var(--bg-pattern) 3px
-    );
+      var(--bg-pattern) 3px);
   pointer-events: none;
   z-index: 0;
 }
@@ -90,11 +86,9 @@ body::after {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(
-    circle at center,
-    transparent 0%,
-    var(--bg-color) 70%
-  );
+  background: radial-gradient(circle at center,
+      transparent 0%,
+      var(--bg-color) 70%);
   filter: blur(80px);
   pointer-events: none;
   z-index: 0;
@@ -102,10 +96,12 @@ body::after {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 0.5;
   }
+
   50% {
     opacity: 0.8;
   }
@@ -136,19 +132,19 @@ body::after {
 }
 
 .theme-toggle .sun-icon {
-  display: none;
+  display: block;
 }
 
 .theme-toggle .moon-icon {
-  display: block;
+  display: none;
 }
 
 [data-theme="dark"] .theme-toggle .sun-icon {
-  display: block;
+  display: none;
 }
 
 [data-theme="dark"] .theme-toggle .moon-icon {
-  display: none;
+  display: block;
 }
 
 .container {
@@ -198,7 +194,8 @@ body::after {
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  max-width: 300px; /* o el ancho que necesites */
+  max-width: 300px;
+  /* o el ancho que necesites */
   margin: 0 auto;
 }
 
@@ -316,6 +313,7 @@ body::after {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
