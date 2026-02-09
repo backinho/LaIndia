@@ -7,16 +7,85 @@ class InventarioApp {
     this.categorias = [];
     this.proveedores = [];
     this.usuarioActual = null;
-    this.categoriaFormListenerAttached = false;
-    this.proveedorFormListenerAttached = false; // Add this flag to prevent multiple event listeners
-    this.clienteFormListenerAttached = false; // Add this flag to prevent multiple event listeners
-    this.usuarioFormListenerAttached = false; // Add this flag to prevent multiple event listeners
-    this.credencialesFormListenerAttached = false; // Add this flag to prevent multiple event listeners
 
     this.cargarDatosCompletos().then(() => {
       this.inicializar();
     });
   }
+
+  // ==================== VALIDACIONES ====================
+
+  validarEmail(email) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  }
+
+  validarTelefono(telefono) {
+    const regex = /^[0-9]{10,11}$/;
+    return regex.test(telefono.replace(/[\s\-\(\)]/g, ''));
+  }
+
+  validarPassword(password) {
+    // Validar longitud mínima de 8 caracteres
+    if (password.length < 8) {
+      return {
+        valid: false,
+        mensaje: "La contraseña debe tener al menos 8 caracteres"
+      };
+    }
+
+    // Validar que tenga al menos una mayúscula
+    if (!/[A-Z]/.test(password)) {
+      return {
+        valid: false,
+        mensaje: "La contraseña debe contener al menos una letra mayúscula"
+      };
+    }
+
+    // Validar que tenga al menos una minúscula
+    if (!/[a-z]/.test(password)) {
+      return {
+        valid: false,
+        mensaje: "La contraseña debe contener al menos una letra minúscula"
+      };
+    }
+
+    // Validar que tenga al menos un número
+    if (!/[0-9]/.test(password)) {
+      return {
+        valid: false,
+        mensaje: "La contraseña debe contener al menos un número"
+      };
+    }
+
+    // Validar que tenga al menos un carácter especial
+    // Caracteres especiales comunes: !@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]/.test(password)) {
+      return {
+        valid: false,
+        mensaje: "La contraseña debe contener al menos un carácter especial"
+      };
+    }
+
+    return { valid: true };
+  }
+
+  validarCampoVacio(valor, nombreCampo) {
+    if (!valor || valor.trim() === '') {
+      return { valid: false, mensaje: `El campo ${nombreCampo} es requerido` };
+    }
+    return { valid: true };
+  }
+
+  validarNumeroPositivo(numero, nombreCampo) {
+    const num = parseFloat(numero);
+    if (isNaN(num) || num <= 0) {
+      return { valid: false, mensaje: `${nombreCampo} debe ser un número mayor a 0` };
+    }
+    return { valid: true };
+  }
+
+  // ==================== CARGA DE DATOS ====================
 
   async cargarDatosCompletos() {
     await Promise.all([
@@ -36,13 +105,12 @@ class InventarioApp {
     });
 
     if (!response.ok) {
-      console.error("Error al guardar productos en el servidor");
+      console.error("Error al cargar productos del servidor");
       return;
     }
 
     if (response.ok) {
       const data = await response.json();
-
       this.productos = data.data;
     }
   }
@@ -53,13 +121,12 @@ class InventarioApp {
     });
 
     if (!response.ok) {
-      console.error("Error al guardar categorías en el servidor");
+      console.error("Error al cargar categorías del servidor");
       return;
     }
 
     if (response.ok) {
       const data = await response.json();
-
       this.categorias = data.data;
     }
   }
@@ -70,13 +137,12 @@ class InventarioApp {
     });
 
     if (!response.ok) {
-      console.error("Error al guardar movimientos en el servidor");
+      console.error("Error al cargar movimientos del servidor");
       return;
     }
 
     if (response.ok) {
       const data = await response.json();
-
       this.movimientos = data.data;
     }
   }
@@ -87,13 +153,12 @@ class InventarioApp {
     });
 
     if (!response.ok) {
-      console.error("Error al guardar proveedores en el servidor");
+      console.error("Error al cargar proveedores del servidor");
       return;
     }
 
     if (response.ok) {
       const data = await response.json();
-
       this.proveedores = data.data;
     }
   }
@@ -104,13 +169,12 @@ class InventarioApp {
     });
 
     if (!response.ok) {
-      console.error("Error al guardar clientes en el servidor");
+      console.error("Error al cargar clientes del servidor");
       return;
     }
 
     if (response.ok) {
       const data = await response.json();
-
       this.clientes = data.data;
     }
   }
@@ -121,13 +185,12 @@ class InventarioApp {
     });
 
     if (!response.ok) {
-      console.error("Error al guardar usuarios en el servidor");
+      console.error("Error al cargar usuarios del servidor");
       return;
     }
 
     if (response.ok) {
       const data = await response.json();
-
       this.usuarios = data.data;
     }
   }
@@ -138,13 +201,12 @@ class InventarioApp {
     });
 
     if (!response.ok) {
-      console.error("Error al guardar al usuario activo en el servidor");
+      console.error("Error al cargar usuario activo del servidor");
       return;
     }
 
     if (response.ok) {
       const data = await response.json();
-
       this.usuarioActual = data.data;
     }
   }
@@ -158,6 +220,8 @@ class InventarioApp {
       notification.classList.remove("show");
     }, 3000);
   }
+
+  // ==================== INICIALIZACIÓN ====================
 
   inicializar() {
     this.inicializarTema();
@@ -174,7 +238,32 @@ class InventarioApp {
     this.inicializarClientes();
     this.inicializarUsuarios();
     this.inicializarPerfil();
+    this.inicializarEventDelegation();
     this.mostrarNotificacion("Bienvenido al Sistema de Inventario", "success");
+  }
+
+  inicializarEventDelegation() {
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('filter-cat')) {
+        const filterCat = e.target.getAttribute('data-filter-cat');
+        const filterButtons = document.querySelectorAll('.filter-cat');
+        const mainFilterBtn = document.getElementById('mainFilterBtn');
+
+        filterButtons.forEach((btn) => btn.classList.remove('active'));
+        e.target.classList.add('active');
+
+        if (filterCat === 'todos') {
+          mainFilterBtn.innerHTML = '<span>Seleccionar categoría</span><i class="fas fa-chevron-down"></i>';
+          mainFilterBtn.classList.remove('active');
+        } else {
+          mainFilterBtn.innerHTML = `<span>${filterCat}</span><i class="fas fa-chevron-down"></i>`;
+          mainFilterBtn.classList.add('active');
+        }
+
+        const searchInput = document.getElementById('search-inventario-full');
+        this.renderizarInventarioCompleto(searchInput ? searchInput.value : '', filterCat);
+      }
+    });
   }
 
   inicializarTema() {
@@ -184,8 +273,7 @@ class InventarioApp {
     const themeToggle = document.getElementById("theme-toggle");
     if (themeToggle) {
       themeToggle.addEventListener("click", () => {
-        const currentTheme =
-          document.documentElement.getAttribute("data-theme");
+        const currentTheme = document.documentElement.getAttribute("data-theme");
         const newTheme = currentTheme === "light" ? "dark" : "light";
         document.documentElement.setAttribute("data-theme", newTheme);
         localStorage.setItem("theme", newTheme);
@@ -256,9 +344,7 @@ class InventarioApp {
       });
     });
 
-    const dropdownItems = document.querySelectorAll(
-      ".dropdown-item[data-section]"
-    );
+    const dropdownItems = document.querySelectorAll(".dropdown-item[data-section]");
     dropdownItems.forEach((item) => {
       item.addEventListener("click", (e) => {
         e.preventDefault();
@@ -266,9 +352,7 @@ class InventarioApp {
         if (!sectionId) return;
 
         navItems.forEach((nav) => nav.classList.remove("active"));
-        const targetNav = document.querySelector(
-          `.nav-item[data-section="${sectionId}"]`
-        );
+        const targetNav = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
         if (targetNav) {
           targetNav.classList.add("active");
         }
@@ -314,12 +398,7 @@ class InventarioApp {
     document.addEventListener("click", (e) => {
       if (window.innerWidth <= 1024) {
         const target = e.target;
-        if (
-          sidebar &&
-          !sidebar.contains(target) &&
-          mobileToggle &&
-          !mobileToggle.contains(target)
-        ) {
+        if (sidebar && !sidebar.contains(target) && mobileToggle && !mobileToggle.contains(target)) {
           sidebar.classList.remove("active");
         }
       }
@@ -389,9 +468,7 @@ class InventarioApp {
     const userNameDisplay = document.getElementById("user-name-display");
 
     if (userAvatar) {
-      userAvatar.textContent = this.usuarioActual.nombre
-        .charAt(0)
-        .toUpperCase();
+      userAvatar.textContent = this.usuarioActual.nombre.charAt(0).toUpperCase();
     }
 
     if (userNameDisplay) {
@@ -399,22 +476,17 @@ class InventarioApp {
     }
   }
 
+  // ==================== RESUMEN ====================
+
   inicializarResumen() {
     this.renderizarResumen();
   }
 
   renderizarResumen() {
     const totalProductos = this.productos.length;
-    const totalEntradas = this.movimientos.filter(
-      (m) => m.tipo === "entrada"
-    ).length;
-    const totalSalidas = this.movimientos.filter(
-      (m) => m.tipo === "salida"
-    ).length;
-    const valorInventario = this.productos.reduce(
-      (sum, p) => sum + p.stock * p.precio,
-      0
-    );
+    const totalEntradas = this.movimientos.filter((m) => m.tipo === "entrada").length;
+    const totalSalidas = this.movimientos.filter((m) => m.tipo === "salida").length;
+    const valorInventario = this.productos.reduce((sum, p) => sum + p.stock * p.precio, 0);
 
     const totalProductosEl = document.getElementById("total-productos");
     const totalEntradasEl = document.getElementById("total-entradas");
@@ -424,8 +496,7 @@ class InventarioApp {
     if (totalProductosEl) totalProductosEl.textContent = totalProductos;
     if (totalEntradasEl) totalEntradasEl.textContent = totalEntradas;
     if (totalSalidasEl) totalSalidasEl.textContent = totalSalidas;
-    if (valorInventarioEl)
-      valorInventarioEl.textContent = `$${valorInventario.toFixed(2)}`;
+    if (valorInventarioEl) valorInventarioEl.textContent = `$${valorInventario.toFixed(2)}`;
 
     this.renderizarStockBajo();
     this.renderizarUltimosMovimientos();
@@ -442,25 +513,14 @@ class InventarioApp {
       .slice(0, 5);
 
     if (productosStockBajo.length === 0) {
-      tbody.innerHTML =
-        '<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay productos con stock bajo</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay productos con stock bajo</td></tr>';
       return;
     }
 
     tbody.innerHTML = productosStockBajo
       .map((producto) => {
-        const estadoClass =
-          producto.stock === 0
-            ? "error"
-            : producto.stock < 5
-              ? "warning"
-              : "info";
-        const estadoTexto =
-          producto.stock === 0
-            ? "Sin stock"
-            : producto.stock < 5
-              ? "Crítico"
-              : "Bajo";
+        const estadoClass = producto.stock === 0 ? "error" : producto.stock < 5 ? "warning" : "info";
+        const estadoTexto = producto.stock === 0 ? "Sin stock" : producto.stock < 5 ? "Crítico" : "Bajo";
 
         return `
         <tr>
@@ -481,8 +541,7 @@ class InventarioApp {
     const ultimosMovimientos = [...this.movimientos].reverse().slice(0, 5);
 
     if (ultimosMovimientos.length === 0) {
-      tbody.innerHTML =
-        '<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay movimientos registrados</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay movimientos registrados</td></tr>';
       return;
     }
 
@@ -502,8 +561,7 @@ class InventarioApp {
 
         return `
         <tr>
-          <td><span class="status-badge ${movimiento.tipo}">${movimiento.tipo === "entrada" ? "Entrada" : "Salida"
-          }</span></td>
+          <td><span class="status-badge ${movimiento.tipo}">${movimiento.tipo === "entrada" ? "Entrada" : "Salida"}</span></td>
           <td>${cliente_proveedor}</td>
           <td>${movimiento.cantidad_total}</td>
           <td>${fechaFormateada}</td>
@@ -518,25 +576,22 @@ class InventarioApp {
     const salidasSemana = document.getElementById("salidas-semana");
 
     if (entradasSemana) {
-      const entradas = this.movimientos.filter(
-        (m) => m.tipo === "entrada"
-      ).length;
+      const entradas = this.movimientos.filter((m) => m.tipo === "entrada").length;
       entradasSemana.textContent = entradas;
     }
 
     if (salidasSemana) {
-      const salidas = this.movimientos.filter(
-        (m) => m.tipo === "salida"
-      ).length;
+      const salidas = this.movimientos.filter((m) => m.tipo === "salida").length;
       salidasSemana.textContent = salidas;
     }
   }
+
+  // ==================== INVENTARIO ====================
 
   inicializarInventario() {
     this.renderizarInventarioCompleto();
     this.renderizarFiltrosInventario();
     this.inicializarBusquedaInventario();
-    this.inicializarFiltrosInventario();
   }
 
   renderizarInventarioCompleto(filtro = "", categoria = "todos") {
@@ -546,9 +601,7 @@ class InventarioApp {
     let productosFiltrados = this.productos;
 
     if (categoria !== "todos") {
-      productosFiltrados = productosFiltrados.filter(
-        (p) => p.categoria_nombre === categoria
-      );
+      productosFiltrados = productosFiltrados.filter((p) => p.categoria_nombre === categoria);
     }
 
     if (filtro) {
@@ -561,8 +614,7 @@ class InventarioApp {
     }
 
     if (productosFiltrados.length === 0) {
-      tbody.innerHTML =
-        '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay productos en el inventario</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay productos en el inventario</td></tr>';
       return;
     }
 
@@ -578,8 +630,7 @@ class InventarioApp {
           <td>$${parseFloat(producto.precio).toFixed(2)}</td>
           <td>$${valorTotal}</td>
           <td>
-            <button class="action-btn" onclick="app.verDetalleProducto('${producto.id
-          }')">Ver Detalle</button>
+            <button class="action-btn" onclick="app.verDetalleProducto('${producto.id}')">Ver Detalle</button>
           </td>
         </tr>
       `;
@@ -591,13 +642,13 @@ class InventarioApp {
     const mainFilterBtn = document.getElementById("mainFilterBtn");
     const filterOptions = document.getElementById("filterOptions");
 
-    mainFilterBtn.addEventListener("click", function (e) {
+    if (!mainFilterBtn || !filterOptions) return;
+
+    mainFilterBtn.onclick = function (e) {
       e.stopPropagation();
       filterOptions.classList.toggle("show");
       mainFilterBtn.classList.toggle("active");
-    });
-
-    if (!filterOptions) return;
+    };
 
     let categorias = this.categorias;
 
@@ -606,36 +657,13 @@ class InventarioApp {
       return;
     }
 
-    filterOptions.innerHTML =
-      '<button class="filter-btn filter-cat active" data-filter-cat="todos">Todos</button>';
+    filterOptions.innerHTML = '<button class="filter-btn filter-cat active" data-filter-cat="todos">Todos</button>';
 
     filterOptions.innerHTML += categorias
       .map((categoria) => {
-        return `
-        <button class="filter-btn filter-cat" data-filter-cat="${categoria.nombre}">${categoria.nombre}</button>
-      `;
+        return `<button class="filter-btn filter-cat" data-filter-cat="${categoria.nombre}">${categoria.nombre}</button>`;
       })
       .join("");
-
-    const filterButtons = document.querySelectorAll(".filter-cat");
-
-    filterButtons.forEach((button) => {
-      button.addEventListener("click", function () {
-        const filterCat = this.getAttribute("data-filter-cat");
-
-        filterButtons.forEach((btn) => btn.classList.remove("active"));
-        this.classList.add("active");
-
-        if (filterCat === "todos") {
-          mainFilterBtn.innerHTML =
-            '<span>Seleccionar categoría</span><i class="fas fa-chevron-down"></i>';
-          mainFilterBtn.classList.remove("active");
-        } else {
-          mainFilterBtn.innerHTML = `<span>${filterCat}</span><i class="fas fa-chevron-down"></i>`;
-          mainFilterBtn.classList.add("active");
-        }
-      });
-    });
 
     document.addEventListener("click", function (e) {
       if (!filterOptions.contains(e.target) && e.target !== mainFilterBtn) {
@@ -652,38 +680,17 @@ class InventarioApp {
   inicializarBusquedaInventario() {
     const searchInput = document.getElementById("search-inventario-full");
     if (searchInput) {
-      searchInput.addEventListener("input", (e) => {
-        const activeFilter = document.querySelector(
-          "[data-filter-cat].filter-btn.active"
-        );
-        const categoria = activeFilter
-          ? activeFilter.getAttribute("data-filter-cat")
-          : "todos";
+      searchInput.onchange = (e) => {
+        const activeFilter = document.querySelector("[data-filter-cat].filter-btn.active");
+        const categoria = activeFilter ? activeFilter.getAttribute("data-filter-cat") : "todos";
         this.renderizarInventarioCompleto(e.target.value, categoria);
-      });
+      };
+      searchInput.oninput = (e) => {
+        const activeFilter = document.querySelector("[data-filter-cat].filter-btn.active");
+        const categoria = activeFilter ? activeFilter.getAttribute("data-filter-cat") : "todos";
+        this.renderizarInventarioCompleto(e.target.value, categoria);
+      };
     }
-  }
-
-  inicializarFiltrosInventario() {
-    const filterButtons = document.querySelectorAll(
-      "[data-filter-cat].filter-btn"
-    );
-
-    filterButtons.forEach((button) => {
-      button.addEventListener("click", (e) => {
-        const target = e.target;
-        const categoria = target.getAttribute("data-filter-cat");
-
-        filterButtons.forEach((btn) => btn.classList.remove("active"));
-        target.classList.add("active");
-
-        const searchInput = document.getElementById("search-inventario-full");
-        this.renderizarInventarioCompleto(
-          searchInput ? searchInput.value : "",
-          categoria || "todos"
-        );
-      });
-    });
   }
 
   verDetalleProducto(productoId) {
@@ -728,9 +735,7 @@ class InventarioApp {
           </div>
           <div class="detalle-item">
             <span class="detalle-label">Precio Unitario</span>
-            <span class="detalle-value">$${parseFloat(producto.precio).toFixed(
-        2
-      )}</span>
+            <span class="detalle-value">$${parseFloat(producto.precio).toFixed(2)}</span>
           </div>
           <div class="detalle-item">
             <span class="detalle-label">Valor Total</span>
@@ -757,16 +762,13 @@ class InventarioApp {
                 });
               }
               if (mov.productos) {
-                const prodEnMov = mov.productos.find(
-                  (p) => p.id === productoId
-                );
+                const prodEnMov = mov.productos.find((p) => p.id === productoId);
                 if (prodEnMov) cantidad = prodEnMov.cantidad;
               }
               return `
                 <div class="movimiento-item">
                   <div class="movimiento-info">
-                    <span class="status-badge ${mov.tipo}">${mov.tipo === "entrada" ? "Entrada" : "Salida"
-                }</span>
+                    <span class="status-badge ${mov.tipo}">${mov.tipo === "entrada" ? "Entrada" : "Salida"}</span>
                     <span>${cantidad} unidades</span>
                     <span class="movimiento-fecha">${fechaFormateada}</span>
                   </div>
@@ -800,72 +802,70 @@ class InventarioApp {
     }
   }
 
+  // ==================== ENTRADA DE PRODUCTOS ====================
+
   renderDefaultEntradaItem() {
     const listEntrada = document.getElementById("productos-entrada-list");
     if (!listEntrada) return;
 
-    const countItems = listEntrada.querySelectorAll(
-      ".producto-entrada-item"
-    ).length;
+    const countItems = listEntrada.querySelectorAll(".producto-entrada-item").length;
     const existingMsg = document.getElementById("no-productos");
 
     if (countItems === 0 && !existingMsg) {
       const defaultItem = document.createElement("div");
-      defaultItem.innerHTML =
-        '<p style="text-align: center; padding: 20px; color: var(--text-secondary);" id="no-productos">No hay productos agregados</p>';
+      defaultItem.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-secondary);" id="no-productos">No hay productos agregados</p>';
       listEntrada.appendChild(defaultItem);
     }
   }
 
   inicializarEntrada() {
     const entryBtnOptions = document.getElementById("entrada-options-btn");
-    const entryFilterOptions = document.getElementById(
-      "entrada-filter-options"
-    );
+    const entryFilterOptions = document.getElementById("entrada-filter-options");
     const addBtn = document.getElementById("producto-existente-btn");
     const addNewBtn = document.getElementById("producto-nuevo-btn");
     const registrarBtn = document.getElementById("registrar-entrada");
 
     this.renderDefaultEntradaItem();
 
-    entryBtnOptions.addEventListener("click", function (e) {
-      e.stopPropagation();
-      entryFilterOptions.classList.toggle("show");
-      entryBtnOptions.classList.toggle("active");
-    });
+    if (entryBtnOptions) {
+      entryBtnOptions.onclick = function (e) {
+        e.stopPropagation();
+        entryFilterOptions.classList.toggle("show");
+        entryBtnOptions.classList.toggle("active");
+      };
+    }
 
     document.addEventListener("click", function (e) {
-      if (
-        !entryFilterOptions.contains(e.target) &&
-        e.target !== entryBtnOptions
-      ) {
+      if (entryFilterOptions && entryBtnOptions && !entryFilterOptions.contains(e.target) && e.target !== entryBtnOptions) {
         entryFilterOptions.classList.remove("show");
         entryBtnOptions.classList.remove("active");
       }
     });
 
-    entryFilterOptions.addEventListener("click", function (e) {
-      e.stopPropagation();
-    });
+    if (entryFilterOptions) {
+      entryFilterOptions.addEventListener("click", function (e) {
+        e.stopPropagation();
+      });
+    }
 
     if (addBtn) {
-      addBtn.addEventListener("click", () => {
+      addBtn.onclick = () => {
         const option = addBtn.getAttribute("data-option-entrada");
         this.agregarProductoEntrada(option);
-      });
+      };
     }
 
     if (addNewBtn) {
-      addNewBtn.addEventListener("click", () => {
+      addNewBtn.onclick = () => {
         const option = addNewBtn.getAttribute("data-option-entrada");
         this.agregarProductoEntrada(option);
-      });
+      };
     }
 
     if (registrarBtn) {
-      registrarBtn.addEventListener("click", () => {
+      registrarBtn.onclick = () => {
         this.registrarEntrada();
-      });
+      };
     }
   }
 
@@ -905,34 +905,34 @@ class InventarioApp {
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Nombre del Producto</label>
+            <label>Nombre del Producto *</label>
             <input type="text" class="form-input producto-nombre" required />
           </div>
           <div class="form-group">
-            <label>Código</label>
+            <label>Código *</label>
             <input type="text" class="form-input producto-codigo" required />
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Cantidad</label>
+            <label>Cantidad *</label>
             <input type="number" class="form-input producto-cantidad" min="1" required />
           </div>
           <div class="form-group">
-            <label>Precio Unitario</label>
+            <label>Precio Unitario *</label>
             <input type="number" class="form-input producto-precio" step="0.01" min="0" required />
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Categoría</label>
+            <label>Categoría *</label>
             <select class="form-input producto-categoria" required>
               <option value="">Seleccionar categoría</option>
               ${categoriasOptions}
             </select>
           </div>
           <div class="form-group">
-            <label>Proveedor</label>
+            <label>Proveedor *</label>
             <select class="form-input producto-proveedor" required>
               <option value="">Seleccionar proveedor</option>
               ${proveedoresOptions}
@@ -968,7 +968,7 @@ class InventarioApp {
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Producto</label>
+            <label>Producto *</label>
             <select class="form-input entrada-producto" required>
               <option value="">Seleccionar producto</option>
               ${productosOptions}
@@ -981,11 +981,11 @@ class InventarioApp {
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Cantidad</label>
+            <label>Cantidad *</label>
             <input type="number" class="form-input entrada-cantidad" min="1" required />
           </div>
           <div class="form-group">
-            <label>Precio Unitario</label>
+            <label>Precio Unitario *</label>
             <input type="number" class="form-input entrada-precio" min="1" required />
           </div>
         </div>
@@ -995,7 +995,7 @@ class InventarioApp {
             <input type="text" class="form-input entrada-categoria" readonly />
           </div>
           <div class="form-group">
-            <label>Proveedor</label>
+            <label>Proveedor *</label>
             <select class="form-input entrada-proveedor" min="1" required>
               <option value="">Seleccionar proveedor</option>
               ${proveedoresOptions}
@@ -1011,7 +1011,7 @@ class InventarioApp {
 
       const selectProduct = newItem.querySelector(".entrada-producto");
 
-      selectProduct.addEventListener("change", (e) => {
+      selectProduct.onchange = (e) => {
         const productoId = e.target.value;
         const producto = this.productos.find((p) => p.id === productoId);
         const categoriaInput = newItem.querySelector(".entrada-categoria");
@@ -1024,28 +1024,26 @@ class InventarioApp {
           categoriaInput.value = "";
           codeInput.value = "";
         }
-      });
+      };
 
       list.appendChild(newItem);
     }
 
     const removeBtn = newItem.querySelector(".btn-remove-producto");
     if (removeBtn) {
-      removeBtn.addEventListener("click", () => {
+      removeBtn.onclick = () => {
         newItem.remove();
         this.actualizarNumeracionProductos("entrada");
 
         const updatedList = document.getElementById("productos-entrada-list");
-        const remainingItems = updatedList.querySelectorAll(
-          ".producto-entrada-item"
-        ).length;
+        const remainingItems = updatedList.querySelectorAll(".producto-entrada-item").length;
 
         if (remainingItems === 0) {
           this.renderDefaultEntradaItem();
         }
 
         this.mostrarBotonesEliminarEntrada();
-      });
+      };
     }
 
     this.actualizarNumeracionProductos("entrada");
@@ -1072,14 +1070,11 @@ class InventarioApp {
   }
 
   actualizarNumeracionProductos(tipo) {
-    const listId =
-      tipo === "entrada" ? "productos-entrada-list" : "productos-salida-list";
+    const listId = tipo === "entrada" ? "productos-entrada-list" : "productos-salida-list";
     const list = document.getElementById(listId);
     if (!list) return;
 
-    const items = list.querySelectorAll(
-      tipo === "entrada" ? ".producto-entrada-item" : ".producto-salida-item"
-    );
+    const items = list.querySelectorAll(tipo === "entrada" ? ".producto-entrada-item" : ".producto-salida-item");
 
     items.forEach((item, index) => {
       const header = item.querySelector(".item-header h4");
@@ -1096,16 +1091,16 @@ class InventarioApp {
     const items = list.querySelectorAll(".producto-entrada-item");
     const productos = [];
 
-    // Validar que haya al menos un producto
     if (items.length === 0) {
-      this.mostrarNotificacion(
-        "Agrega al menos un producto para registrar la entrada",
-        "error"
-      );
+      this.mostrarNotificacion("Agrega al menos un producto para registrar la entrada", "error");
       return;
     }
 
+    let validacionFallida = false;
+
     items.forEach((item) => {
+      if (validacionFallida) return;
+
       const esNuevo = item.querySelector(".producto-nombre") !== null;
 
       let datosProducto = {};
@@ -1119,21 +1114,22 @@ class InventarioApp {
         const proveedor_id = item.querySelector(".producto-proveedor").value;
         const notas = item.querySelector(".producto-notas").value.trim();
 
-        // Validaciones
-        if (!nombre || !codigo || !cantidad || !precio || !categoria_id) {
-          this.mostrarNotificacion(
-            "Complete todos los campos requeridos",
-            "error"
-          );
-          throw new Error("Campos incompletos");
-        }
+        const validaciones = [
+          this.validarCampoVacio(nombre, 'nombre'),
+          this.validarCampoVacio(codigo, 'código'),
+          this.validarCampoVacio(cantidad, 'cantidad'),
+          this.validarCampoVacio(precio, 'precio'),
+          this.validarCampoVacio(categoria_id, 'categoría'),
+          this.validarNumeroPositivo(cantidad, 'Cantidad'),
+          this.validarNumeroPositivo(precio, 'Precio')
+        ];
 
-        if (parseInt(cantidad) <= 0 || parseFloat(precio) <= 0) {
-          this.mostrarNotificacion(
-            "Cantidad y precio deben ser mayores a 0",
-            "error"
-          );
-          throw new Error("Valores inválidos");
+        for (let validacion of validaciones) {
+          if (!validacion.valid) {
+            this.mostrarNotificacion(validacion.mensaje, "error");
+            validacionFallida = true;
+            return;
+          }
         }
 
         datosProducto = {
@@ -1145,32 +1141,30 @@ class InventarioApp {
           categoria_id: categoria_id,
           proveedor_id: proveedor_id,
           notas: notas,
-          descripcion: notas, // Usar notas como descripción
+          descripcion: notas,
         };
       } else {
         const id = item.querySelector(".entrada-producto").value;
         const codigo = item.querySelector(".entrada-code").value;
         const cantidad = item.querySelector(".entrada-cantidad").value;
         const precio = item.querySelector(".entrada-precio").value;
-        const proveedor_id =
-          item.querySelector(".entrada-proveedor")?.value || "";
+        const proveedor_id = item.querySelector(".entrada-proveedor")?.value || "";
         const notas = item.querySelector(".entrada-notas").value.trim();
 
-        // Validaciones
-        if (!id || !cantidad || !precio) {
-          this.mostrarNotificacion(
-            "Complete todos los campos requeridos",
-            "error"
-          );
-          throw new Error("Campos incompletos");
-        }
+        const validaciones = [
+          this.validarCampoVacio(id, 'producto'),
+          this.validarCampoVacio(cantidad, 'cantidad'),
+          this.validarCampoVacio(precio, 'precio'),
+          this.validarNumeroPositivo(cantidad, 'Cantidad'),
+          this.validarNumeroPositivo(precio, 'Precio')
+        ];
 
-        if (parseInt(cantidad) <= 0 || parseFloat(precio) <= 0) {
-          this.mostrarNotificacion(
-            "Cantidad y precio deben ser mayores a 0",
-            "error"
-          );
-          throw new Error("Valores inválidos");
+        for (let validacion of validaciones) {
+          if (!validacion.valid) {
+            this.mostrarNotificacion(validacion.mensaje, "error");
+            validacionFallida = true;
+            return;
+          }
         }
 
         datosProducto = {
@@ -1186,6 +1180,8 @@ class InventarioApp {
       productos.push(datosProducto);
     });
 
+    if (validacionFallida) return;
+
     try {
       const data = new FormData();
       data.append("productos", JSON.stringify(productos));
@@ -1198,10 +1194,7 @@ class InventarioApp {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Error response:", errorText);
-        this.mostrarNotificacion(
-          "Error al registrar la entrada. Inténtalo de nuevo.",
-          "error"
-        );
+        this.mostrarNotificacion("Error al registrar la entrada. Inténtalo de nuevo.", "error");
         return;
       }
 
@@ -1209,38 +1202,30 @@ class InventarioApp {
 
       if (result.status === true) {
         this.mostrarNotificacion("Entrada registrada exitosamente", "success");
-        // Limpiar formulario y recargar datos
         list.innerHTML = "";
         this.renderDefaultEntradaItem();
 
-        // Recargar datos
         await this.cargarDatosCompletos().then(() => {
           this.renderizarInventarioCompleto();
           this.renderizarResumen();
           this.renderizarHistorial();
         });
       } else {
-        this.mostrarNotificacion(
-          result.message || "Error al registrar la entrada",
-          "error"
-        );
+        this.mostrarNotificacion(result.message || "Error al registrar la entrada", "error");
       }
     } catch (error) {
       console.error("Error:", error);
-      this.mostrarNotificacion(
-        "Error de conexión. Verifica tu conexión a internet.",
-        "error"
-      );
+      this.mostrarNotificacion("Error de conexión. Verifica tu conexión a internet.", "error");
     }
   }
+
+  // ==================== SALIDA DE PRODUCTOS ====================
 
   renderDefaultSalidaItem() {
     const listSalida = document.getElementById("productos-salida-list");
     if (!listSalida) return;
 
-    const countItems = listSalida.querySelectorAll(
-      ".producto-salida-item"
-    ).length;
+    const countItems = listSalida.querySelectorAll(".producto-salida-item").length;
 
     if (countItems === 0) {
       listSalida.innerHTML = `
@@ -1258,15 +1243,15 @@ class InventarioApp {
     this.renderDefaultSalidaItem();
 
     if (addBtn) {
-      addBtn.addEventListener("click", () => {
+      addBtn.onclick = () => {
         this.agregarProductoSalida();
-      });
+      };
     }
 
     if (registrarBtn) {
-      registrarBtn.addEventListener("click", () => {
+      registrarBtn.onclick = () => {
         this.registrarSalida();
-      });
+      };
     }
 
     this.actualizarSelectProductos();
@@ -1278,25 +1263,20 @@ class InventarioApp {
     const list = document.getElementById("productos-salida-list");
     if (!list) return;
 
-    // Eliminar mensaje de "No hay productos" si existe
     const noProductosMsg = document.getElementById("no-productos-salida");
     if (noProductosMsg) {
       list.innerHTML = "";
     }
 
     const newItem = document.createElement("div");
-    newItem.className = "producto-salida-item"; // Asegúrate que el CSS sea similar a .producto-entrada-item
+    newItem.className = "producto-salida-item";
     newItem.style.animation = "fadeIn 0.3s ease-in-out";
 
     const currentItems = list.querySelectorAll(".producto-salida-item").length;
 
-    // Generar opciones de productos con stock
     const productosDisponibles = this.productos.filter((p) => p.stock > 0);
     let productosOptions = productosDisponibles
-      .map(
-        (p) =>
-          `<option value="${p.id}">${p.nombre} (${p.codigo}) - Stock: ${p.stock}</option>`
-      )
+      .map((p) => `<option value="${p.id}">${p.nombre} (${p.codigo}) - Stock: ${p.stock}</option>`)
       .join("");
 
     newItem.innerHTML = `
@@ -1305,7 +1285,7 @@ class InventarioApp {
         </div>
         <div class="form-row">
             <div class="form-group">
-                <label>Producto</label>
+                <label>Producto *</label>
                 <select class="form-input salida-producto" required>
                     <option value="">Seleccionar producto</option>
                     ${productosOptions}
@@ -1318,11 +1298,11 @@ class InventarioApp {
         </div>
         <div class="form-row">
             <div class="form-group">
-                <label>Cantidad a Retirar</label>
+                <label>Cantidad a Retirar *</label>
                 <input type="number" class="form-input salida-cantidad" min="1" required />
             </div>
             <div class="form-group">
-                <label>Motivo</label>
+                <label>Motivo *</label>
                 <select class="form-input salida-motivo" required>
                     <option value="">Seleccionar motivo</option>
                     <option value="Venta">Venta</option>
@@ -1342,24 +1322,22 @@ class InventarioApp {
 
     list.appendChild(newItem);
 
-    // Evento para actualizar el stock visual al seleccionar
     const selectProducto = newItem.querySelector(".salida-producto");
-    selectProducto.addEventListener("change", (e) => {
+    selectProducto.onchange = (e) => {
       const producto = this.productos.find((p) => p.id === e.target.value);
       const stockInput = newItem.querySelector(".salida-stock");
       if (stockInput) stockInput.value = producto ? producto.stock : "";
-    });
+    };
 
-    // Botón eliminar con la misma lógica que entrada
     const removeBtn = newItem.querySelector(".btn-remove-producto");
-    removeBtn.addEventListener("click", () => {
+    removeBtn.onclick = () => {
       newItem.remove();
       this.actualizarNumeracionProductos("salida");
 
       if (list.querySelectorAll(".producto-salida-item").length === 0) {
         this.renderDefaultSalidaItem();
       }
-    });
+    };
 
     this.actualizarNumeracionProductos("salida");
     this.mostrarBotonesEliminarSalida();
@@ -1406,10 +1384,7 @@ class InventarioApp {
       select.innerHTML =
         '<option value="">Seleccionar producto</option>' +
         productosDisponibles
-          .map(
-            (p) =>
-              `<option value="${p.id}">${p.nombre} (${p.codigo}) - Stock: ${p.stock}</option>`
-          )
+          .map((p) => `<option value="${p.id}">${p.nombre} (${p.codigo}) - Stock: ${p.stock}</option>`)
           .join("");
 
       if (currentValue) {
@@ -1426,12 +1401,8 @@ class InventarioApp {
 
     select.innerHTML =
       '<option value="">Seleccionar cliente</option>' +
-      clientesActivos
-        .map((c) => `<option value="${c.id}">${c.nombre}</option>`)
-        .join("");
+      clientesActivos.map((c) => `<option value="${c.id}">${c.nombre}</option>`).join("");
   }
-
-  // En el archivo dashboard.js, busca la función registrarSalida() y reemplázala con:
 
   async registrarSalida() {
     const list = document.getElementById("productos-salida-list");
@@ -1441,22 +1412,17 @@ class InventarioApp {
     const productos = [];
     const cliente_id = document.getElementById("salida-cliente-select").value;
 
-    // Validar que haya al menos un producto
     if (items.length === 0) {
-      this.mostrarNotificacion(
-        "Agrega al menos un producto para registrar la salida",
-        "error"
-      );
+      this.mostrarNotificacion("Agrega al menos un producto para registrar la salida", "error");
       return;
     }
 
-    // Validar que se haya seleccionado un cliente
-    if (!cliente_id) {
+    const validacionCliente = this.validarCampoVacio(cliente_id, 'cliente');
+    if (!validacionCliente.valid) {
       this.mostrarNotificacion("Selecciona un cliente para la salida", "error");
       return;
     }
 
-    // Recolectar y validar datos
     let errorFound = false;
     items.forEach((item) => {
       const productoId = item.querySelector(".salida-producto").value;
@@ -1464,14 +1430,19 @@ class InventarioApp {
       const motivo = item.querySelector(".salida-motivo").value;
       const notas = item.querySelector(".salida-notas").value.trim();
 
-      // Validaciones
-      if (!productoId || !cantidad || !motivo) {
-        this.mostrarNotificacion(
-          "Complete todos los campos requeridos en cada producto",
-          "error"
-        );
-        errorFound = true;
-        return;
+      const validaciones = [
+        this.validarCampoVacio(productoId, 'producto'),
+        this.validarCampoVacio(cantidad, 'cantidad'),
+        this.validarCampoVacio(motivo, 'motivo'),
+        this.validarNumeroPositivo(cantidad, 'Cantidad')
+      ];
+
+      for (let validacion of validaciones) {
+        if (!validacion.valid) {
+          this.mostrarNotificacion(validacion.mensaje, "error");
+          errorFound = true;
+          return;
+        }
       }
 
       const producto = this.productos.find((p) => p.id === productoId);
@@ -1481,17 +1452,8 @@ class InventarioApp {
         return;
       }
 
-      if (parseInt(cantidad) <= 0) {
-        this.mostrarNotificacion("La cantidad debe ser mayor a 0", "error");
-        errorFound = true;
-        return;
-      }
-
       if (parseInt(cantidad) > producto.stock) {
-        this.mostrarNotificacion(
-          `Stock insuficiente para ${producto.nombre}. Stock disponible: ${producto.stock}`,
-          "error"
-        );
+        this.mostrarNotificacion(`Stock insuficiente para ${producto.nombre}. Stock disponible: ${producto.stock}`, "error");
         errorFound = true;
         return;
       }
@@ -1523,10 +1485,7 @@ class InventarioApp {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Error response:", errorText);
-        this.mostrarNotificacion(
-          "Error al registrar la salida. Inténtalo de nuevo.",
-          "error"
-        );
+        this.mostrarNotificacion("Error al registrar la salida. Inténtalo de nuevo.", "error");
         return;
       }
 
@@ -1535,14 +1494,11 @@ class InventarioApp {
       if (result.status === true) {
         this.mostrarNotificacion("Salida registrada exitosamente", "success");
 
-        // Limpiar formulario
         list.innerHTML = "";
         this.renderDefaultSalidaItem();
 
-        // Limpiar selector de cliente
         document.getElementById("salida-cliente-select").value = "";
 
-        // Recargar datos
         await this.cargarDatosCompletos().then(() => {
           this.renderizarInventarioCompleto();
           this.renderizarResumen();
@@ -1550,19 +1506,15 @@ class InventarioApp {
           this.renderizarHistorial();
         });
       } else {
-        this.mostrarNotificacion(
-          result.message || "Error al registrar la salida",
-          "error"
-        );
+        this.mostrarNotificacion(result.message || "Error al registrar la salida", "error");
       }
     } catch (error) {
       console.error("Error:", error);
-      this.mostrarNotificacion(
-        "Error de conexión. Verifica tu conexión a internet.",
-        "error"
-      );
+      this.mostrarNotificacion("Error de conexión. Verifica tu conexión a internet.", "error");
     }
   }
+
+  // ==================== HISTORIAL ====================
 
   inicializarHistorial() {
     this.renderizarHistorial();
@@ -1577,27 +1529,22 @@ class InventarioApp {
     let movimientosFiltrados = [...this.movimientos].reverse();
 
     if (filtroTipo !== "todos") {
-      movimientosFiltrados = movimientosFiltrados.filter(
-        (m) => m.tipo === filtroTipo
-      );
+      movimientosFiltrados = movimientosFiltrados.filter((m) => m.tipo === filtroTipo);
     }
 
     if (filtroBusqueda) {
       movimientosFiltrados = movimientosFiltrados.filter((m) => {
         const searchLower = filtroBusqueda.toLowerCase();
-        console.log(m)
         return (
           m.usuario.toLowerCase().includes(searchLower) ||
           (m.cliente && m.cliente.toLowerCase().includes(searchLower)) ||
-          (m.productoNombre &&
-            m.productoNombre.toLowerCase().includes(searchLower))
+          (m.productoNombre && m.productoNombre.toLowerCase().includes(searchLower))
         );
       });
     }
 
     if (movimientosFiltrados.length === 0) {
-      tbody.innerHTML =
-        '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay movimientos registrados</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay movimientos registrados</td></tr>';
       return;
     }
 
@@ -1606,27 +1553,20 @@ class InventarioApp {
         const fecha = new Date(movimiento.fecha);
         const fechaFormateada = fecha.toLocaleString("es-ES");
 
-        const productosTexto = movimiento.cantidad_total
-          ? `${movimiento.cantidad_total} producto(s)`
-          : "N/A";
+        const productosTexto = movimiento.cantidad_total ? `${movimiento.cantidad_total} producto(s)` : "N/A";
 
-        const clienteProveedor =
-          movimiento.tipo === "entrada"
-            ? movimiento.nombre_proveedor || "N/A"
-            : movimiento.nombre_cliente || "N/A";
+        const clienteProveedor = movimiento.tipo === "entrada" ? movimiento.nombre_proveedor || "N/A" : movimiento.nombre_cliente || "N/A";
 
         return `
         <tr>
           <td>${fechaFormateada}</td>
-          <td><span class="status-badge ${movimiento.tipo}">${movimiento.tipo === "entrada" ? "Entrada" : "Salida"
-          }</span></td>
+          <td><span class="status-badge ${movimiento.tipo}">${movimiento.tipo === "entrada" ? "Entrada" : "Salida"}</span></td>
           <td>${productosTexto}</td>
           <td>${movimiento.nombre_usuario}</td>
           <td>${clienteProveedor}</td>
           <td>${movimiento.valor_total}</td>
           <td>
-            <button class="action-btn" onclick="app.verDetalleHistorial('${movimiento.id
-          }')">Ver Detalle</button>
+            <button class="action-btn" onclick="app.verDetalleHistorial('${movimiento.id}')">Ver Detalle</button>
           </td>
         </tr>
       `;
@@ -1644,19 +1584,11 @@ class InventarioApp {
     const content = document.getElementById("historial-detalle-content");
     const titulo = document.getElementById("historial-detalle-titulo");
 
-    const proveedor_cliente = movimiento.nombre_cliente
-      ? movimiento.nombre_cliente
-      : movimiento.nombre_proveedor;
+    const proveedor_cliente = movimiento.nombre_cliente ? movimiento.nombre_cliente : movimiento.nombre_proveedor;
 
-    const productos =
-      movimiento.total_productos === 1
-        ? movimiento.total_productos + " Producto"
-        : movimiento.total_productos + " Productos";
+    const productos = movimiento.total_productos === 1 ? movimiento.total_productos + " Producto" : movimiento.total_productos + " Productos";
 
-    const unidades =
-      movimiento.total_cantidad === 1
-        ? movimiento.total_cantidad + " Unidad"
-        : movimiento.total_cantidad + " Unidades";
+    const unidades = movimiento.total_cantidad === 1 ? movimiento.total_cantidad + " Unidad" : movimiento.total_cantidad + " Unidades";
 
     if (content) {
       content.innerHTML = `
@@ -1683,9 +1615,7 @@ class InventarioApp {
           </div>
           <div class="detalle-item">
             <span class="detalle-label">Precio total</span>
-            <span class="detalle-value">$${parseFloat(
-        movimiento.valor_total
-      ).toFixed(2)}</span>
+            <span class="detalle-value">$${parseFloat(movimiento.valor_total).toFixed(2)}</span>
           </div>
         </div>
 
@@ -1705,11 +1635,8 @@ class InventarioApp {
                   <div class="movimiento-info">
                     <span>${mov.nombre_producto}</span>
                     <span>${mov.cantidad} unidades</span>
-                    <span class="movimiento-fecha">Precio unitario: ${mov.precio_unitario
-                }</span>
-                    <span class="movimiento-fecha">Precio total: ${precio_total.toFixed(
-                  2
-                )}</span>
+                    <span class="movimiento-fecha">Precio unitario: ${mov.precio_unitario}</span>
+                    <span class="movimiento-fecha">Precio total: ${precio_total.toFixed(2)}</span>
                   </div>
                 </div>
               `;
@@ -1744,7 +1671,7 @@ class InventarioApp {
     const filterButtons = document.querySelectorAll("[data-filter].filter-btn");
 
     filterButtons.forEach((button) => {
-      button.addEventListener("click", (e) => {
+      button.onclick = (e) => {
         const target = e.target;
         const filter = target.getAttribute("data-filter");
 
@@ -1752,28 +1679,23 @@ class InventarioApp {
         target.classList.add("active");
 
         const searchInput = document.getElementById("search-historial");
-        this.renderizarHistorial(
-          filter || "todos",
-          searchInput ? searchInput.value : ""
-        );
-      });
+        this.renderizarHistorial(filter || "todos", searchInput ? searchInput.value : "");
+      };
     });
   }
 
   inicializarBusquedaHistorial() {
     const searchInput = document.getElementById("search-historial");
     if (searchInput) {
-      searchInput.addEventListener("input", (e) => {
-        const activeFilter = document.querySelector(
-          "[data-filter].filter-btn.active"
-        );
-        const filter = activeFilter
-          ? activeFilter.getAttribute("data-filter")
-          : "todos";
+      searchInput.oninput = (e) => {
+        const activeFilter = document.querySelector("[data-filter].filter-btn.active");
+        const filter = activeFilter ? activeFilter.getAttribute("data-filter") : "todos";
         this.renderizarHistorial(filter || "todos", e.target.value);
-      });
+      };
     }
   }
+
+  // ==================== CATEGORÍAS ====================
 
   inicializarCategorias() {
     this.renderizarCategorias();
@@ -1789,14 +1711,12 @@ class InventarioApp {
     const categoriasFiltradas = filtro
       ? this.categorias.filter(
         (c) =>
-          c.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-          c.descripcion.toLowerCase().includes(filtro.toLowerCase())
+          c.nombre.toLowerCase().includes(filtro.toLowerCase()) || c.descripcion.toLowerCase().includes(filtro.toLowerCase())
       )
       : this.categorias;
 
     if (categoriasFiltradas.length === 0) {
-      tbody.innerHTML =
-        '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay categorías registradas</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay categorías registradas</td></tr>';
       return;
     }
 
@@ -1808,13 +1728,10 @@ class InventarioApp {
           <td>${categoria.codigo}</td>
           <td>${categoria.descripcion}</td>
           <td>${categoria.cantidad_productos}</td>
-          <td><span class="status-badge ${categoria.activo ? "activo" : "inactivo"
-          }">${categoria.activo ? "Activo" : "Inactivo"}</span></td>
+          <td><span class="status-badge ${categoria.activo ? "activo" : "inactivo"}">${categoria.activo ? "Activo" : "Inactivo"}</span></td>
           <td>
-            <button class="action-btn" onclick="app.editarCategoria('${categoria.id
-          }')">Editar</button>
-            <button class="action-btn delete" onclick="app.eliminarCategoria('${categoria.id
-          }')">Eliminar</button>
+            <button class="action-btn" onclick="app.editarCategoria('${categoria.id}')">Editar</button>
+            <button class="action-btn delete" onclick="app.eliminarCategoria('${categoria.id}')">Eliminar</button>
           </td>
         </tr>
       `;
@@ -1825,9 +1742,9 @@ class InventarioApp {
   inicializarBusquedaCategorias() {
     const searchInput = document.getElementById("search-categorias");
     if (searchInput) {
-      searchInput.addEventListener("input", (e) => {
+      searchInput.oninput = (e) => {
         this.renderizarCategorias(e.target.value);
-      });
+      };
     }
   }
 
@@ -1839,46 +1756,56 @@ class InventarioApp {
     const categoriaForm = document.getElementById("categoria-form");
 
     if (addCategoriaBtn) {
-      addCategoriaBtn.addEventListener("click", () => {
+      addCategoriaBtn.onclick = () => {
         this.editingCategoriaId = null;
         this.limpiarFormularioCategoria();
         const modalTitle = document.getElementById("categoria-modal-title");
         document.getElementById("categoria-id").value = "";
         if (modalTitle) modalTitle.textContent = "Añadir Categoría";
         if (modal) modal.classList.add("show");
-      });
+      };
     }
 
     if (modalClose) {
-      modalClose.addEventListener("click", () => {
+      modalClose.onclick = () => {
         if (modal) modal.classList.remove("show");
-      });
+      };
     }
 
     if (modalCancel) {
-      modalCancel.addEventListener("click", () => {
+      modalCancel.onclick = () => {
         if (modal) modal.classList.remove("show");
-      });
+      };
     }
 
     if (modal) {
-      modal.addEventListener("click", (e) => {
+      modal.onclick = (e) => {
         if (e.target === modal) {
           modal.classList.remove("show");
         }
-      });
+      };
     }
 
-    if (categoriaForm && !this.categoriaFormListenerAttached) {
-      // Check flag before adding listener
-      categoriaForm.addEventListener("submit", async (e) => {
+    if (categoriaForm) {
+      categoriaForm.onsubmit = async (e) => {
         e.preventDefault();
         const id = document.getElementById("categoria-id").value;
         const nombre = document.getElementById("categoria-nombre").value.trim();
         const codigo = document.getElementById("categoria-codigo").value.trim();
-        const descripcion = document
-          .getElementById("categoria-descripcion")
-          .value.trim();
+        const descripcion = document.getElementById("categoria-descripcion").value.trim();
+
+        const validaciones = [
+          this.validarCampoVacio(nombre, 'nombre'),
+          this.validarCampoVacio(codigo, 'código'),
+          this.validarCampoVacio(descripcion, 'descripción')
+        ];
+
+        for (let validacion of validaciones) {
+          if (!validacion.valid) {
+            this.mostrarNotificacion(validacion.mensaje, "error");
+            return;
+          }
+        }
 
         const data = new FormData();
         data.append("categoria-nombre", nombre);
@@ -1886,14 +1813,6 @@ class InventarioApp {
         data.append("categoria-descripcion", descripcion);
         if (id) {
           data.append("categoria-id", id);
-        }
-
-        if (!nombre || !codigo || !descripcion) {
-          this.mostrarNotificacion(
-            "Por favor complete todos los campos requeridos",
-            "error"
-          );
-          return;
         }
 
         if (!id) {
@@ -1910,10 +1829,7 @@ class InventarioApp {
           const result = await response.json();
 
           if (result.status === true) {
-            this.mostrarNotificacion(
-              "Categoría guardada exitosamente",
-              "success"
-            );
+            this.mostrarNotificacion("Categoría guardada exitosamente", "success");
             this.cargarDatosCompletos().then(() => {
               this.inicializarCategorias();
               this.actualizarSelectsCategorias();
@@ -1926,20 +1842,14 @@ class InventarioApp {
           });
 
           if (!response.ok) {
-            this.mostrarNotificacion(
-              "Error al actualizar la categoría",
-              "error"
-            );
+            this.mostrarNotificacion("Error al actualizar la categoría", "error");
             return;
           }
 
           const result = await response.json();
 
           if (result.status === "success") {
-            this.mostrarNotificacion(
-              "Categoría actualizada exitosamente",
-              "success"
-            );
+            this.mostrarNotificacion("Categoría actualizada exitosamente", "success");
             this.cargarDatosCompletos().then(() => {
               this.inicializarCategorias();
               this.actualizarSelectsCategorias();
@@ -1950,8 +1860,7 @@ class InventarioApp {
         const modal = document.getElementById("categoria-modal");
         if (modal) modal.classList.remove("show");
         this.limpiarFormularioCategoria();
-      });
-      this.categoriaFormListenerAttached = true; // Set flag after adding listener
+      };
     }
   }
 
@@ -1962,8 +1871,7 @@ class InventarioApp {
     document.getElementById("categoria-id").value = categoria.id;
     document.getElementById("categoria-nombre").value = categoria.nombre;
     document.getElementById("categoria-codigo").value = categoria.codigo;
-    document.getElementById("categoria-descripcion").value =
-      categoria.descripcion;
+    document.getElementById("categoria-descripcion").value = categoria.descripcion;
 
     const modalTitle = document.getElementById("categoria-modal-title");
     if (modalTitle) modalTitle.textContent = "Editar Categoría";
@@ -1986,9 +1894,7 @@ class InventarioApp {
     const modal = document.getElementById("confirmacion-categoria-modal");
     const confirmarBtn = document.getElementById("confirmacion-categoria-form");
     const closeBtn = document.getElementById("confirmacion-categoria-close");
-    const cancelarBtn = document.getElementById(
-      "confirmacion-categoria-cancel"
-    );
+    const cancelarBtn = document.getElementById("confirmacion-categoria-cancel");
 
     if (cancelarBtn) {
       cancelarBtn.onclick = () => {
@@ -2003,15 +1909,15 @@ class InventarioApp {
     }
 
     if (modal) {
-      modal.addEventListener("click", (e) => {
+      modal.onclick = (e) => {
         if (e.target === modal) {
           modal.classList.remove("show");
         }
-      });
+      };
     }
 
     if (confirmarBtn) {
-      confirmarBtn.onclick = async (e) => {
+      confirmarBtn.onsubmit = async (e) => {
         e.preventDefault();
         const data = new FormData();
         const id = document.getElementById("confirmacion-categoria-id").value;
@@ -2054,15 +1960,15 @@ class InventarioApp {
       const currentValue = select.value;
       select.innerHTML =
         '<option value="">Seleccionar categoría</option>' +
-        categoriasActivas
-          .map((c) => `<option value="${c.nombre}">${c.nombre}</option>`)
-          .join("");
+        categoriasActivas.map((c) => `<option value="${c.nombre}">${c.nombre}</option>`).join("");
 
       if (currentValue) {
         select.value = currentValue;
       }
     });
   }
+
+  // ==================== PROVEEDORES ====================
 
   inicializarProveedores() {
     this.renderizarProveedores();
@@ -2086,8 +1992,7 @@ class InventarioApp {
       : this.proveedores;
 
     if (proveedoresFiltrados.length === 0) {
-      tbody.innerHTML =
-        '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay proveedores registrados</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay proveedores registrados</td></tr>';
       return;
     }
 
@@ -2100,13 +2005,10 @@ class InventarioApp {
         <td>${proveedor.email}</td>
         <td>${proveedor.telefono}</td>
         <td>${proveedor.direccion}</td>
-        <td><span class="status-badge ${proveedor.activo ? "activo" : "inactivo"
-          }">${proveedor.activo ? "Activo" : "Inactivo"}</span></td>
+        <td><span class="status-badge ${proveedor.activo ? "activo" : "inactivo"}">${proveedor.activo ? "Activo" : "Inactivo"}</span></td>
         <td>
-          <button class="action-btn" onclick="app.editarProveedor('${proveedor.id
-          }')">Editar</button>
-          <button class="action-btn delete" onclick="app.eliminarProveedor('${proveedor.id
-          }')">Eliminar</button>
+          <button class="action-btn" onclick="app.editarProveedor('${proveedor.id}')">Editar</button>
+          <button class="action-btn delete" onclick="app.eliminarProveedor('${proveedor.id}')">Eliminar</button>
         </td>
       </tr>
     `
@@ -2117,9 +2019,9 @@ class InventarioApp {
   inicializarBusquedaProveedores() {
     const searchInput = document.getElementById("search-proveedores");
     if (searchInput) {
-      searchInput.addEventListener("input", (e) => {
+      searchInput.oninput = (e) => {
         this.renderizarProveedores(e.target.value);
-      });
+      };
     }
   }
 
@@ -2131,58 +2033,69 @@ class InventarioApp {
     const proveedorForm = document.getElementById("proveedor-form");
 
     if (addProveedorBtn) {
-      addProveedorBtn.addEventListener("click", () => {
+      addProveedorBtn.onclick = () => {
         this.editingProveedorId = null;
         this.limpiarFormularioProveedor();
         document.getElementById("proveedor-id").value = "";
         const modalTitle = document.getElementById("proveedor-modal-title");
         if (modalTitle) modalTitle.textContent = "Añadir Proveedor";
         if (modal) modal.classList.add("show");
-      });
+      };
     }
 
     if (modalClose) {
-      modalClose.addEventListener("click", () => {
+      modalClose.onclick = () => {
         if (modal) modal.classList.remove("show");
-      });
+      };
     }
 
     if (modalCancel) {
-      modalCancel.addEventListener("click", () => {
+      modalCancel.onclick = () => {
         if (modal) modal.classList.remove("show");
-      });
+      };
     }
 
     if (modal) {
-      modal.addEventListener("click", (e) => {
+      modal.onclick = (e) => {
         if (e.target === modal) {
           modal.classList.remove("show");
         }
-      });
+      };
     }
 
-    if (proveedorForm && !this.proveedorFormListenerAttached) {
-      proveedorForm.addEventListener("submit", async (e) => {
+    if (proveedorForm) {
+      proveedorForm.onsubmit = async (e) => {
         e.preventDefault();
         const id = document.getElementById("proveedor-id").value.trim();
         const nombre = document.getElementById("proveedor-nombre").value.trim();
-        const contacto = document
-          .getElementById("proveedor-contacto")
-          .value.trim();
+        const contacto = document.getElementById("proveedor-contacto").value.trim();
         const email = document.getElementById("proveedor-email").value.trim();
-        const telefono = document
-          .getElementById("proveedor-telefono")
-          .value.trim();
-        const direccion = document
-          .getElementById("proveedor-direccion")
-          .value.trim();
+        const telefono = document.getElementById("proveedor-telefono").value.trim();
+        const direccion = document.getElementById("proveedor-direccion").value.trim();
         const notas = document.getElementById("proveedor-notas").value.trim();
 
-        if (!nombre || !contacto || !email || !telefono || !direccion) {
-          this.mostrarNotificacion(
-            "Por favor complete todos los campos requeridos",
-            "error"
-          );
+        const validaciones = [
+          this.validarCampoVacio(nombre, 'nombre'),
+          this.validarCampoVacio(contacto, 'contacto'),
+          this.validarCampoVacio(email, 'email'),
+          this.validarCampoVacio(telefono, 'teléfono'),
+          this.validarCampoVacio(direccion, 'dirección')
+        ];
+
+        for (let validacion of validaciones) {
+          if (!validacion.valid) {
+            this.mostrarNotificacion(validacion.mensaje, "error");
+            return;
+          }
+        }
+
+        if (!this.validarEmail(email)) {
+          this.mostrarNotificacion("Por favor ingrese un email válido", "error");
+          return;
+        }
+
+        if (!this.validarTelefono(telefono)) {
+          this.mostrarNotificacion("Por favor ingrese un teléfono válido (Solo numeros - 10/11 digitos)", "error");
           return;
         }
 
@@ -2208,10 +2121,7 @@ class InventarioApp {
           const result = await response.json();
 
           if (result.status === "success") {
-            this.mostrarNotificacion(
-              "Proveedor guardado exitosamente",
-              "success"
-            );
+            this.mostrarNotificacion("Proveedor guardado exitosamente", "success");
             this.cargarDatosCompletos().then(() => {
               this.inicializarProveedores();
               this.actualizarSelectsProveedores();
@@ -2233,20 +2143,14 @@ class InventarioApp {
           });
 
           if (!response.ok) {
-            this.mostrarNotificacion(
-              "Error al actualizar el proveedor",
-              "error"
-            );
+            this.mostrarNotificacion("Error al actualizar el proveedor", "error");
             return;
           }
 
           const result = await response.json();
 
           if (result.status === "success") {
-            this.mostrarNotificacion(
-              "Proveedor actualizado exitosamente",
-              "success"
-            );
+            this.mostrarNotificacion("Proveedor actualizado exitosamente", "success");
             this.cargarDatosCompletos().then(() => {
               this.inicializarProveedores();
               this.actualizarSelectsProveedores();
@@ -2257,8 +2161,7 @@ class InventarioApp {
         const modal = document.getElementById("proveedor-modal");
         if (modal) modal.classList.remove("show");
         this.limpiarFormularioProveedor();
-      });
-      this.proveedorFormListenerAttached = true; // Set flag after adding listener
+      };
     }
   }
 
@@ -2295,9 +2198,7 @@ class InventarioApp {
     const modal = document.getElementById("confirmacion-proveedor-modal");
     const confirmarBtn = document.getElementById("confirmacion-proveedor-form");
     const closeBtn = document.getElementById("confirmacion-proveedor-close");
-    const cancelarBtn = document.getElementById(
-      "confirmacion-proveedor-cancel"
-    );
+    const cancelarBtn = document.getElementById("confirmacion-proveedor-cancel");
 
     if (cancelarBtn) {
       cancelarBtn.onclick = () => {
@@ -2312,15 +2213,15 @@ class InventarioApp {
     }
 
     if (modal) {
-      modal.addEventListener("click", (e) => {
+      modal.onclick = (e) => {
         if (e.target === modal) {
           modal.classList.remove("show");
         }
-      });
+      };
     }
 
     if (confirmarBtn) {
-      confirmarBtn.onclick = async (e) => {
+      confirmarBtn.onsubmit = async (e) => {
         e.preventDefault();
         const data = new FormData();
         const id = document.getElementById("confirmacion-proveedor-id").value;
@@ -2364,9 +2265,7 @@ class InventarioApp {
         const currentValue = input.value;
         input.innerHTML =
           '<option value="">Seleccionar proveedor</option>' +
-          proveedoresActivos
-            .map((p) => `<option value="${p.nombre}">${p.nombre}</option>`)
-            .join("");
+          proveedoresActivos.map((p) => `<option value="${p.nombre}">${p.nombre}</option>`).join("");
 
         if (currentValue) {
           input.value = currentValue;
@@ -2374,6 +2273,8 @@ class InventarioApp {
       }
     });
   }
+
+  // ==================== CLIENTES ====================
 
   inicializarClientes() {
     this.renderizarClientes();
@@ -2396,8 +2297,7 @@ class InventarioApp {
       : this.clientes;
 
     if (clientesFiltrados.length === 0) {
-      tbody.innerHTML =
-        '<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay clientes registrados</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: var(--text-secondary);">No hay clientes registrados</td></tr>';
       return;
     }
 
@@ -2409,13 +2309,10 @@ class InventarioApp {
         <td>${cliente.email}</td>
         <td>${cliente.telefono}</td>
         <td>${cliente.direccion}</td>
-        <td><span class="status-badge ${cliente.activo ? "activo" : "inactivo"
-          }">${cliente.activo ? "Activo" : "Inactivo"}</span></td>
+        <td><span class="status-badge ${cliente.activo ? "activo" : "inactivo"}">${cliente.activo ? "Activo" : "Inactivo"}</span></td>
         <td>
-          <button class="action-btn" onclick="app.editarCliente('${cliente.id
-          }')">Editar</button>
-          <button class="action-btn delete" onclick="app.eliminarCliente('${cliente.id
-          }')">Eliminar</button>
+          <button class="action-btn" onclick="app.editarCliente('${cliente.id}')">Editar</button>
+          <button class="action-btn delete" onclick="app.eliminarCliente('${cliente.id}')">Eliminar</button>
         </td>
       </tr>
     `
@@ -2426,9 +2323,9 @@ class InventarioApp {
   inicializarBusquedaClientes() {
     const searchInput = document.getElementById("search-clientes");
     if (searchInput) {
-      searchInput.addEventListener("input", (e) => {
+      searchInput.oninput = (e) => {
         this.renderizarClientes(e.target.value);
-      });
+      };
     }
   }
 
@@ -2440,42 +2337,41 @@ class InventarioApp {
     const clienteForm = document.getElementById("cliente-form");
 
     if (addClienteBtn) {
-      addClienteBtn.addEventListener("click", () => {
+      addClienteBtn.onclick = () => {
         this.editingClienteId = null;
         this.limpiarFormularioCliente();
         document.getElementById("cliente-id").value = "";
         const modalTitle = document.getElementById("cliente-modal-title");
         if (modalTitle) modalTitle.textContent = "Añadir Cliente";
         if (modal) modal.classList.add("show");
-      });
+      };
     }
 
     if (modalClose) {
-      modalClose.addEventListener("click", () => {
+      modalClose.onclick = () => {
         if (modal) modal.classList.remove("show");
-      });
+      };
     }
 
     if (modalCancel) {
-      modalCancel.addEventListener("click", () => {
+      modalCancel.onclick = () => {
         if (modal) modal.classList.remove("show");
-      });
+      };
     }
 
     if (modal) {
-      modal.addEventListener("click", (e) => {
+      modal.onclick = (e) => {
         if (e.target === modal) {
           modal.classList.remove("show");
         }
-      });
+      };
     }
 
-    if (clienteForm && !this.clienteFormListenerAttached) {
-      clienteForm.addEventListener("submit", (e) => {
+    if (clienteForm) {
+      clienteForm.onsubmit = (e) => {
         e.preventDefault();
         this.guardarCliente();
-      });
-      this.clienteFormListenerAttached = true; // Set flag after adding listener
+      };
     }
   }
 
@@ -2526,15 +2422,15 @@ class InventarioApp {
     }
 
     if (modal) {
-      modal.addEventListener("click", (e) => {
+      modal.onclick = (e) => {
         if (e.target === modal) {
           modal.classList.remove("show");
         }
-      });
+      };
     }
 
     if (confirmarBtn) {
-      confirmarBtn.onclick = async (e) => {
+      confirmarBtn.onsubmit = async (e) => {
         e.preventDefault();
         const data = new FormData();
         const id = document.getElementById("confirmacion-clientes-id").value;
@@ -2570,11 +2466,27 @@ class InventarioApp {
     const direccion = document.getElementById("cliente-direccion").value.trim();
     const notas = document.getElementById("cliente-notas").value.trim();
 
-    if (!nombre || !email || !telefono || !direccion) {
-      this.mostrarNotificacion(
-        "Por favor complete todos los campos requeridos",
-        "error"
-      );
+    const validaciones = [
+      this.validarCampoVacio(nombre, 'nombre'),
+      this.validarCampoVacio(email, 'email'),
+      this.validarCampoVacio(telefono, 'teléfono'),
+      this.validarCampoVacio(direccion, 'dirección')
+    ];
+
+    for (let validacion of validaciones) {
+      if (!validacion.valid) {
+        this.mostrarNotificacion(validacion.mensaje, "error");
+        return;
+      }
+    }
+
+    if (!this.validarEmail(email)) {
+      this.mostrarNotificacion("Por favor ingrese un email válido", "error");
+      return;
+    }
+
+    if (!this.validarTelefono(telefono)) {
+      this.mostrarNotificacion("Por favor ingrese un teléfono válido (Solo numeros - 10/11 digitos)", "error");
       return;
     }
 
@@ -2647,6 +2559,8 @@ class InventarioApp {
     }
   }
 
+  // ==================== USUARIOS ====================
+
   inicializarUsuarios() {
     this.renderizarUsuarios();
     this.inicializarBusquedaUsuarios();
@@ -2660,9 +2574,7 @@ class InventarioApp {
 
     const usuariosFiltrados = filtro
       ? this.usuarios.filter(
-        (u) =>
-          u.nombre.toLowerCase().includes(filtro.toLowerCase()) ||
-          u.email.toLowerCase().includes(filtro.toLowerCase())
+        (u) => u.nombre.toLowerCase().includes(filtro.toLowerCase()) || u.email.toLowerCase().includes(filtro.toLowerCase())
       )
       : this.usuarios;
 
@@ -2673,15 +2585,11 @@ class InventarioApp {
         <td>${usuario.nombre}</td>
         <td>${usuario.email}</td>
         <td>${usuario.telefono}</td>
-        <td><span class="role-badge ${usuario.rol}">${usuario.rol === "admin" ? "Administrador" : "Usuario"
-          }</span></td>
-        <td><span class="status-badge ${usuario.activo ? "activo" : "inactivo"
-          }">${usuario.activo ? "Activo" : "Inactivo"}</span></td>
+        <td><span class="role-badge ${usuario.rol}">${usuario.rol === "admin" ? "Administrador" : "Usuario"}</span></td>
+        <td><span class="status-badge ${usuario.activo ? "activo" : "inactivo"}">${usuario.activo ? "Activo" : "Inactivo"}</span></td>
         <td>
-          <button class="action-btn" onclick="app.editarUsuario('${usuario.id
-          }')">Editar</button>
-          <button class="action-btn delete" onclick="app.eliminarUsuario('${usuario.id
-          }')">Eliminar</button>
+          <button class="action-btn" onclick="app.editarUsuario('${usuario.id}')">Editar</button>
+          <button class="action-btn delete" onclick="app.eliminarUsuario('${usuario.id}')">Eliminar</button>
         </td>
       </tr>
     `
@@ -2692,9 +2600,9 @@ class InventarioApp {
   inicializarBusquedaUsuarios() {
     const searchInput = document.getElementById("search-usuarios");
     if (searchInput) {
-      searchInput.addEventListener("input", (e) => {
+      searchInput.oninput = (e) => {
         this.renderizarUsuarios(e.target.value);
-      });
+      };
     }
   }
 
@@ -2706,42 +2614,41 @@ class InventarioApp {
     const userForm = document.getElementById("user-form");
 
     if (addUserBtn) {
-      addUserBtn.addEventListener("click", () => {
+      addUserBtn.onclick = () => {
         this.editingUserId = null;
         this.limpiarFormularioUsuario();
         document.getElementById("user-id").value = "";
         const modalTitle = document.getElementById("modal-title");
         if (modalTitle) modalTitle.textContent = "Añadir Usuario";
         if (modal) modal.classList.add("show");
-      });
+      };
     }
 
     if (modalClose) {
-      modalClose.addEventListener("click", () => {
+      modalClose.onclick = () => {
         if (modal) modal.classList.remove("show");
-      });
+      };
     }
 
     if (modalCancel) {
-      modalCancel.addEventListener("click", () => {
+      modalCancel.onclick = () => {
         if (modal) modal.classList.remove("show");
-      });
+      };
     }
 
     if (modal) {
-      modal.addEventListener("click", (e) => {
+      modal.onclick = (e) => {
         if (e.target === modal) {
           modal.classList.remove("show");
         }
-      });
+      };
     }
 
-    if (userForm && !this.usuarioFormListenerAttached) {
-      userForm.addEventListener("submit", (e) => {
+    if (userForm) {
+      userForm.onsubmit = (e) => {
         e.preventDefault();
         this.guardarUsuario();
-      });
-      this.usuarioFormListenerAttached = true; // Set flag after adding listener
+      };
     }
   }
 
@@ -2792,15 +2699,16 @@ class InventarioApp {
     }
 
     if (modal) {
-      modal.addEventListener("click", (e) => {
+      modal.onclick = (e) => {
         if (e.target === modal) {
           modal.classList.remove("show");
         }
-      });
+      };
     }
 
     if (confirmarBtn) {
-      confirmarBtn.onclick = async () => {
+      confirmarBtn.onsubmit = async (e) => {
+        e.preventDefault();
         const data = new FormData();
         const id = document.getElementById("confirmacion-usuarios-id").value;
         data.append("confirmacion-id", id);
@@ -2833,6 +2741,37 @@ class InventarioApp {
     const telefono = document.getElementById("user-telefono").value;
     const rol = document.getElementById("user-rol").value;
     const password = document.getElementById("user-password").value;
+
+    const validaciones = [
+      this.validarCampoVacio(nombre, 'nombre'),
+      this.validarCampoVacio(email, 'email'),
+      this.validarCampoVacio(telefono, 'teléfono'),
+      this.validarCampoVacio(rol, 'rol'),
+      this.validarCampoVacio(password, 'contraseña')
+    ];
+
+    for (let validacion of validaciones) {
+      if (!validacion.valid) {
+        this.mostrarNotificacion(validacion.mensaje, "error");
+        return;
+      }
+    }
+
+    if (!this.validarEmail(email)) {
+      this.mostrarNotificacion("Por favor ingrese un email válido", "error");
+      return;
+    }
+
+    if (!this.validarTelefono(telefono)) {
+      this.mostrarNotificacion("Por favor ingrese un teléfono válido (Solo numeros - 10/11 digitos)", "error");
+      return;
+    }
+
+    const validacionPassword = this.validarPassword(password);
+    if (!validacionPassword.valid) {
+      this.mostrarNotificacion(validacionPassword.mensaje, "error");
+      return;
+    }
 
     if (!id) {
       const data = new FormData();
@@ -2901,6 +2840,8 @@ class InventarioApp {
     }
   }
 
+  // ==================== PERFIL ====================
+
   inicializarPerfil() {
     const profileForm = document.getElementById("profile-form");
     const credencialsForm = document.getElementById("credentials-form");
@@ -2908,29 +2849,28 @@ class InventarioApp {
     const patternVerifyBtn = document.getElementById("verify-pattern-btn");
 
     if (patternClearBtn) {
-      patternClearBtn.addEventListener("click", () => this.clearPattern());
+      patternClearBtn.onclick = () => this.clearPattern();
     }
 
     if (patternVerifyBtn) {
-      patternVerifyBtn.addEventListener("click", (e) => {
+      patternVerifyBtn.onclick = (e) => {
         e.preventDefault();
         this.verifyPattern();
-      });
+      };
     }
 
     if (profileForm) {
-      profileForm.addEventListener("submit", async (e) => {
+      profileForm.onsubmit = async (e) => {
         e.preventDefault();
         this.guardarPerfil();
-      });
+      };
     }
 
-    if (credencialsForm && !this.credencialesFormListenerAttached) {
-      credencialsForm.addEventListener("submit", (e) => {
+    if (credencialsForm) {
+      credencialsForm.onsubmit = (e) => {
         e.preventDefault();
         this.inicializarConfirmacionCrendenciales();
-      });
-      this.credencialesFormListenerAttached = true; // Set flag after adding listener
+      };
     }
 
     this.cargarDatosPerfil();
@@ -2947,6 +2887,7 @@ class InventarioApp {
 
   initializePatternGrid() {
     const grid = document.getElementById("patternGrid");
+    if (!grid) return;
     grid.innerHTML = "";
 
     for (let i = 1; i <= 9; i++) {
@@ -2954,7 +2895,7 @@ class InventarioApp {
       dot.className = "pattern-dot";
       dot.dataset.id = i;
       dot.textContent = i;
-      dot.addEventListener("click", () => this.selectDot(i));
+      dot.onclick = () => this.selectDot(i);
       grid.appendChild(dot);
     }
   }
@@ -2963,11 +2904,8 @@ class InventarioApp {
     const dots = this.methods.pattern.selectedDots;
     if (!dots.includes(dotId)) {
       dots.push(dotId);
-      document
-        .querySelector(`.pattern-dot[data-id="${dotId}"]`)
-        .classList.add("selected");
+      document.querySelector(`.pattern-dot[data-id="${dotId}"]`).classList.add("selected");
     }
-    console.log(this.methods.pattern.selectedDots);
   }
 
   clearPattern() {
@@ -2980,33 +2918,37 @@ class InventarioApp {
 
   verifyPattern() {
     const pattern = this.methods.pattern.selectedDots.join("");
-    const patternModal = document.getElementById("pattern-confirmacion");
 
+    if (pattern.length < 4) {
+      this.mostrarNotificacion("El patrón debe tener al menos 4 puntos", "error");
+      return;
+    }
+
+    const patternModal = document.getElementById("pattern-confirmacion");
     patternModal.classList.add("show");
 
-    const patternModalClose = document.getElementById(
-      "pattern-confirmacion-close"
-    );
-    const patternModalCancel = document.getElementById(
-      "pattern-confirmacion-cancel"
-    );
-    const patternModalVerify = document.getElementById(
-      "pattern-confirmacion-verify"
-    );
+    const patternModalClose = document.getElementById("pattern-confirmacion-close");
+    const patternModalCancel = document.getElementById("pattern-confirmacion-cancel");
+    const patternModalVerify = document.getElementById("pattern-confirmacion-verify");
 
-    patternModalClose.addEventListener("click", () => {
+    patternModalClose.onclick = () => {
       patternModal.classList.remove("show");
-    });
+    };
 
-    patternModalCancel.addEventListener("click", () => {
+    patternModalCancel.onclick = () => {
       patternModal.classList.remove("show");
-    });
+    };
 
     patternModalVerify.onclick = async () => {
       const patternPassword = document.getElementById("pattern-password").value;
+
+      const validacionPassword = this.validarCampoVacio(patternPassword, 'contraseña');
+      if (!validacionPassword.valid) {
+        this.mostrarNotificacion(validacionPassword.mensaje, "error");
+        return;
+      }
+
       const data = new FormData();
-      console.log(pattern);
-      console.log(patternPassword);
       data.append("pattern-password", patternPassword);
       data.append("pattern", pattern);
 
@@ -3015,8 +2957,6 @@ class InventarioApp {
         body: data,
       });
 
-      console.log(response);
-
       if (!response.ok) {
         this.mostrarNotificacion("Error al actualizar el patrón", "error");
         return;
@@ -3024,10 +2964,9 @@ class InventarioApp {
 
       const result = await response.json();
 
-      console.log(result);
-
       if (result.status === "success") {
         this.mostrarNotificacion("Patrón actualizado exitosamente", "success");
+        document.getElementById("pattern-password").value = "";
         this.inicializarPerfil();
         this.clearPattern();
         patternModal.classList.remove("show");
@@ -3050,9 +2989,7 @@ class InventarioApp {
     const passwordUpdate = document.getElementById("profile-password");
 
     if (profileAvatar) {
-      profileAvatar.textContent = this.usuarioActual.nombre
-        .charAt(0)
-        .toUpperCase();
+      profileAvatar.textContent = this.usuarioActual.nombre.charAt(0).toUpperCase();
     }
 
     if (profileName) {
@@ -3064,9 +3001,7 @@ class InventarioApp {
     }
 
     if (profileMovimientos) {
-      const movimientosUsuario = this.movimientos.filter(
-        (m) => m.usuario === this.usuarioActual.nombre
-      );
+      const movimientosUsuario = this.movimientos.filter((m) => m.usuario === this.usuarioActual.nombre);
       profileMovimientos.textContent = movimientosUsuario.length.toString();
     }
 
@@ -3082,23 +3017,19 @@ class InventarioApp {
 
     if (patternUpdate) {
       patternUpdate.textContent = this.usuarioActual.last_token_recovery
-        ? "Ultima actualización de patrón de seguridad: " +
-        this.usuarioActual.last_token_recovery
+        ? "Ultima actualización de patrón de seguridad: " + this.usuarioActual.last_token_recovery
         : "No hay patrón de seguridad";
     }
 
     if (passwordUpdate) {
       passwordUpdate.textContent = this.usuarioActual.last_password_change
-        ? "Ultimo cambio de contraseña: " +
-        this.usuarioActual.last_password_change
+        ? "Ultimo cambio de contraseña: " + this.usuarioActual.last_password_change
         : "No se han realizado cambios";
     }
 
     document.getElementById("profile-nombre").value = this.usuarioActual.nombre;
-    document.getElementById("profile-email-input").value =
-      this.usuarioActual.email;
-    document.getElementById("profile-telefono").value =
-      this.usuarioActual.telefono || "";
+    document.getElementById("profile-email-input").value = this.usuarioActual.email;
+    document.getElementById("profile-telefono").value = this.usuarioActual.telefono || "";
   }
 
   async guardarPerfil() {
@@ -3107,6 +3038,29 @@ class InventarioApp {
     const nombre = document.getElementById("profile-nombre").value;
     const email = document.getElementById("profile-email-input").value;
     const telefono = document.getElementById("profile-telefono").value;
+
+    const validaciones = [
+      this.validarCampoVacio(nombre, 'nombre'),
+      this.validarCampoVacio(email, 'email'),
+      this.validarCampoVacio(telefono, 'teléfono')
+    ];
+
+    for (let validacion of validaciones) {
+      if (!validacion.valid) {
+        this.mostrarNotificacion(validacion.mensaje, "error");
+        return;
+      }
+    }
+
+    if (!this.validarEmail(email)) {
+      this.mostrarNotificacion("Por favor ingrese un email válido", "error");
+      return;
+    }
+
+    if (!this.validarTelefono(telefono)) {
+      this.mostrarNotificacion("Por favor ingrese un teléfono válido (Solo numeros - 10/11 digitos)", "error");
+      return;
+    }
 
     const data = new FormData();
     data.append("profile-nombre", nombre);
@@ -3117,8 +3071,6 @@ class InventarioApp {
       method: "POST",
       body: data,
     });
-
-    console.log(response);
 
     if (!response.ok) {
       console.error("Error al actualizar los datos del perfil");
@@ -3145,58 +3097,68 @@ class InventarioApp {
     const modalCancel = document.getElementById("confirmacion-cancel");
     const modalVerify = document.getElementById("confirmacion-confirm");
 
-    modalClose.addEventListener("click", () => {
+    modalClose.onclick = () => {
       modal.classList.remove("show");
-    });
+    };
 
-    modalCancel.addEventListener("click", () => {
+    modalCancel.onclick = () => {
       modal.classList.remove("show");
-    });
+    };
 
     if (modal) {
-      modal.addEventListener("click", (e) => {
+      modal.onclick = (e) => {
         if (e.target === modal) {
           modal.classList.remove("show");
         }
-      });
+      };
     }
 
     if (modalVerify) {
       modalVerify.onclick = async () => {
-        const nuevaPassword = document.getElementById(
-          "profile-nueva-contrasena"
-        );
-        const confirmarPassword = document.getElementById(
-          "profile-confirmar-contrasena"
-        );
-        const actualPassword = document.getElementById(
-          "profile-contrasena-actual"
-        );
+        const nuevaPassword = document.getElementById("profile-nueva-contrasena");
+        const confirmarPassword = document.getElementById("profile-confirmar-contrasena");
+        const actualPassword = document.getElementById("profile-contrasena-actual");
 
-        const data = new FormData();
-        data.append("profile-nueva-contrasena", nuevaPassword.value);
-        data.append("profile-contrasena-actual", actualPassword.value);
-        console.log("Verificar");
+        const validaciones = [
+          this.validarCampoVacio(nuevaPassword.value, 'nueva contraseña'),
+          this.validarCampoVacio(confirmarPassword.value, 'confirmar contraseña'),
+          this.validarCampoVacio(actualPassword.value, 'contraseña actual')
+        ];
+
+        for (let validacion of validaciones) {
+          if (!validacion.valid) {
+            this.mostrarNotificacion(validacion.mensaje, "error");
+            return;
+          }
+        }
+
+        const validacionPassword = this.validarPassword(nuevaPassword.value);
+        if (!validacionPassword.valid) {
+          this.mostrarNotificacion(validacionPassword.mensaje, "error");
+          modal.classList.remove("show");
+          return;
+        }
 
         if (nuevaPassword.value !== confirmarPassword.value) {
           this.mostrarNotificacion("Las contraseñas no coinciden", "error");
+          modal.classList.remove("show");
           return;
         }
 
         if (actualPassword.value === nuevaPassword.value) {
-          this.mostrarNotificacion(
-            "La contraseña actual es igual a la nueva",
-            "error"
-          );
+          this.mostrarNotificacion("La contraseña nueva debe ser diferente a la actual", "error");
+          modal.classList.remove("show");
           return;
         }
+
+        const data = new FormData();
+        data.append("profile-nueva-contrasena", nuevaPassword.value);
+        data.append("profile-contrasena-actual", actualPassword.value);
 
         const response = await fetch("perfil/actualizarCredenciales", {
           method: "POST",
           body: data,
         });
-
-        console.log(response);
 
         if (!response.ok) {
           console.error("Error al actualizar las credenciales");
@@ -3205,13 +3167,11 @@ class InventarioApp {
 
         const result = await response.json();
 
-        console.log(result);
-
         if (result.status === "success") {
-          this.mostrarNotificacion(
-            "Credenciales actualizadas correctamente",
-            "success"
-          );
+          this.mostrarNotificacion("Credenciales actualizadas correctamente", "success");
+          nuevaPassword.value = "";
+          confirmarPassword.value = "";
+          actualPassword.value = "";
           this.cargarDatosCompletos().then(() => {
             this.inicializarPerfil();
           });

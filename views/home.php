@@ -3,10 +3,10 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <link rel="icon" type="image/svg+xml" href="/LaIndia/public/assets/img/fortextil.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/LaIndia/public/assets/css/home.css" />
-  <title>Sistema de Login</title>
+  <title>FORTEXTIL</title>
 </head>
 
 <body>
@@ -19,6 +19,9 @@
   <div class="container">
     <!-- Formulario de Login -->
     <div id="login-form" class="form-container active">
+      <div class="logo-container">
+        <img src="/LaIndia/public/assets/img/fortextil.png" alt="FORTEXTIL Logo" class="logo" />
+      </div>
       <h1>Iniciar Sesión</h1>
       <form id="login">
         <div class="input-group">
@@ -38,6 +41,9 @@
 
     <!-- Formulario de Recuperación de Contraseña -->
     <div id="recovery-form" class="form-container">
+      <div class="logo-container">
+        <img src="/public/fortextil.png" alt="FORTEXTIL Logo" class="logo" />
+      </div>
       <h1>Recuperar Contraseña</h1>
 
       <!-- Paso 1: Verificar email -->

@@ -3,9 +3,9 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <link rel="icon" type="image/svg+xml" href="/LaIndia/public/assets/img/fortextil.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sistema de Inventario</title>
+  <title>FORTEXTIL</title>
   <link rel="stylesheet" href="/LaIndia/public/assets/css/dashboard.css" />
   <meta property="og:image" content="https://bolt.new/static/og_default.png">
   <meta name="twitter:card" content="summary_large_image">
@@ -16,7 +16,8 @@
   <div class="dashboard-container">
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <h2 class="logo">Inventario</h2>
+        <img src="/LaIndia/public/assets/img/fortextil.png" alt="logo" class="sidebar-logo" />
+        <h2 class="logo">FORTEXTIL</h2>
         <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
           <span class="hamburger"></span>
         </button>
@@ -395,7 +396,7 @@
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" id="confirmacion-usuarios-cancel">Cancelar</button>
-          <button type="button" class="btn btn-primary">Confirmar</button>
+          <button type="submit" class="btn btn-primary">Confirmar</button>
         </div>
       </form>
     </div>
