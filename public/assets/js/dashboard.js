@@ -238,32 +238,7 @@ class InventarioApp {
     this.inicializarClientes();
     this.inicializarUsuarios();
     this.inicializarPerfil();
-    this.inicializarEventDelegation();
     this.mostrarNotificacion("Bienvenido al Sistema de Inventario", "success");
-  }
-
-  inicializarEventDelegation() {
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('filter-cat')) {
-        const filterCat = e.target.getAttribute('data-filter-cat');
-        const filterButtons = document.querySelectorAll('.filter-cat');
-        const mainFilterBtn = document.getElementById('mainFilterBtn');
-
-        filterButtons.forEach((btn) => btn.classList.remove('active'));
-        e.target.classList.add('active');
-
-        if (filterCat === 'todos') {
-          mainFilterBtn.innerHTML = '<span>Seleccionar categoría</span><i class="fas fa-chevron-down"></i>';
-          mainFilterBtn.classList.remove('active');
-        } else {
-          mainFilterBtn.innerHTML = `<span>${filterCat}</span><i class="fas fa-chevron-down"></i>`;
-          mainFilterBtn.classList.add('active');
-        }
-
-        const searchInput = document.getElementById('search-inventario-full');
-        this.renderizarInventarioCompleto(searchInput ? searchInput.value : '', filterCat);
-      }
-    });
   }
 
   inicializarTema() {
@@ -601,7 +576,11 @@ class InventarioApp {
     let productosFiltrados = this.productos;
 
     if (categoria !== "todos") {
-      productosFiltrados = productosFiltrados.filter((p) => p.categoria_nombre === categoria);
+      const categoriaNorm = (categoria || '').toString().trim().toLowerCase();
+      productosFiltrados = productosFiltrados.filter((p) => {
+        const catName = p.categoria_nombre || '';
+        return catName.toString().trim().toLowerCase() === categoriaNorm;
+      });
     }
 
     if (filtro) {
@@ -642,13 +621,13 @@ class InventarioApp {
     const mainFilterBtn = document.getElementById("mainFilterBtn");
     const filterOptions = document.getElementById("filterOptions");
 
-    if (!mainFilterBtn || !filterOptions) return;
-
-    mainFilterBtn.onclick = function (e) {
+    mainFilterBtn.addEventListener("click", function (e) {
       e.stopPropagation();
       filterOptions.classList.toggle("show");
       mainFilterBtn.classList.toggle("active");
-    };
+    });
+
+    if (!filterOptions) return;
 
     let categorias = this.categorias;
 
@@ -657,13 +636,41 @@ class InventarioApp {
       return;
     }
 
-    filterOptions.innerHTML = '<button class="filter-btn filter-cat active" data-filter-cat="todos">Todos</button>';
+    filterOptions.innerHTML =
+      '<button class="filter-btn filter-cat active" data-filter-cat="todos">Todos</button>';
 
     filterOptions.innerHTML += categorias
       .map((categoria) => {
-        return `<button class="filter-btn filter-cat" data-filter-cat="${categoria.nombre}">${categoria.nombre}</button>`;
+        return `
+        <button class="filter-btn filter-cat" data-filter-cat="${categoria.nombre}">${categoria.nombre}</button>
+      `;
       })
       .join("");
+
+    const filterButtons = filterOptions.querySelectorAll(".filter-cat");
+    const self = this;
+
+    filterButtons.forEach((button) => {
+      button.addEventListener("click", (e) => {
+        e.preventDefault();
+        const filterCat = button.getAttribute("data-filter-cat");
+
+        filterButtons.forEach((btn) => btn.classList.remove("active"));
+        button.classList.add("active");
+
+        if (filterCat === "todos") {
+          mainFilterBtn.innerHTML =
+            '<span>Seleccionar categoría</span><i class="fas fa-chevron-down"></i>';
+          mainFilterBtn.classList.remove("active");
+        } else {
+          mainFilterBtn.innerHTML = `<span>${filterCat}</span><i class="fas fa-chevron-down"></i>`;
+          mainFilterBtn.classList.add("active");
+        }
+
+        const searchInput = document.getElementById('search-inventario-full');
+        self.renderizarInventarioCompleto(searchInput ? searchInput.value : '', filterCat);
+      });
+    });
 
     document.addEventListener("click", function (e) {
       if (!filterOptions.contains(e.target) && e.target !== mainFilterBtn) {
@@ -744,7 +751,13 @@ class InventarioApp {
         </div>
 
         <div class="movimientos-producto">
-          <h4>Historial de Movimientos (${movimientosProducto.length})</h4>
+          <div class="card-header">
+            <h4>Historial de Movimientos (${movimientosProducto.length})</h4>
+            <button class="btn btn-primary" id="exportarMovimientosInventarioBtn">
+              <i class="fas fa-file-export"></i>
+              Exportar PDF
+            </button>
+          </div>
           ${movimientosProducto.length === 0
           ? '<p style="color: var(--text-secondary);">No hay movimientos registrados para este producto</p>'
           : movimientosProducto

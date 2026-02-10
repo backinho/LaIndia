@@ -1,5 +1,11 @@
 <div class="table-card">
-    <h2 class="card-title">Inventario de Productos</h2>
+    <div class="card-header">
+        <h2 class="card-title">Inventario de Productos</h2>
+        <button class="btn btn-primary" id="exportarInventarioBtn">
+            <i class="fas fa-file-export"></i>
+             Exportar PDF
+        </button>
+    </div>
     <div class="table-header">
         <input type="search" id="search-inventario-full" class="search-input" placeholder="Buscar productos..." />
         <div class="filter-container">

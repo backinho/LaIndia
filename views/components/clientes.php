@@ -1,5 +1,11 @@
 <div class="table-card">
-    <h2 class="card-title">Gestión de Clientes</h2>
+    <div class="card-header">
+        <h2 class="card-title">Gestión de Clientes</h2>
+        <button class="btn btn-primary" id="exportarClientesBtn">
+            <i class="fas fa-file-export"></i>
+             Exportar PDF
+        </button>
+    </div>
     <div class="table-header">
         <input type="search" id="search-clientes" class="search-input" placeholder="Buscar clientes..." />
         <button class="btn btn-primary" id="add-cliente-btn">Añadir Cliente</button>

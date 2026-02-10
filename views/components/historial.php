@@ -1,5 +1,11 @@
 <div class="table-card">
-    <h2 class="card-title">Historial de Movimientos</h2>
+    <div class="card-header">
+        <h2 class="card-title">Historial de Movimientos</h2>
+        <button class="btn btn-primary" id="exportarHistorialBtn">
+            <i class="fas fa-file-export"></i>
+             Exportar PDF
+        </button>
+    </div>
     <div class="table-header">
         <input type="search" id="search-historial" class="search-input" placeholder="Buscar movimientos..." />
         <div class="filter-buttons">

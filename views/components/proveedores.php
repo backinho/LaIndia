@@ -1,5 +1,11 @@
 <div class="table-card">
-    <h2 class="card-title">Gestión de Proveedores</h2>
+    <div class="card-header">
+        <h2 class="card-title">Gestión de Proveedores</h2>
+        <button class="btn btn-primary" id="exportarProveedoresBtn">
+            <i class="fas fa-file-export"></i>
+             Exportar PDF
+        </button>
+    </div>
     <div class="table-header">
         <input type="search" id="search-proveedores" class="search-input" placeholder="Buscar proveedores..." />
         <button class="btn btn-primary" id="add-proveedor-btn">Añadir Proveedor</button>

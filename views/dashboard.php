@@ -427,6 +427,9 @@
   <div class="notification" id="notification"></div>
 
   <script type="module" src="/LaIndia/public/assets/js/dashboard.js"></script>
+  <script src="/LaIndia/public/assets/js/jspdf.js"></script>
+  <script src="/LaIndia/public/assets/js/jspdf.plugin.js"></script>
+  <script src="/LaIndia/public/assets/js/reportes.js"></script>
 </body>
 
 </html>

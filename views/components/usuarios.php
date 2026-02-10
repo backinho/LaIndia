@@ -1,5 +1,11 @@
 <div class="table-card">
-    <h2 class="card-title">Gestión de Usuarios</h2>
+    <div class="card-header">
+        <h2 class="card-title">Gestión de Usuarios</h2>
+        <button class="btn btn-primary" id="exportarUsuariosBtn">
+            <i class="fas fa-file-export"></i>
+             Exportar PDF
+        </button>
+    </div>
     <div class="table-header">
         <input type="search" id="search-usuarios" class="search-input" placeholder="Buscar usuarios..." />
         <button class="btn btn-primary" id="add-user-btn">Añadir Usuario</button>

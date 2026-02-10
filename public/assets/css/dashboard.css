@@ -342,6 +342,15 @@ body {
   margin-bottom: 24px;
 }
 
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .card-title {
   font-size: 20px;
   font-weight: 600;
