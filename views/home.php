@@ -42,7 +42,7 @@
     <!-- Formulario de Recuperación de Contraseña -->
     <div id="recovery-form" class="form-container">
       <div class="logo-container">
-        <img src="/public/fortextil.png" alt="FORTEXTIL Logo" class="logo" />
+        <img src="/LaIndia/public/assets/img/fortextil.png" alt="FORTEXTIL Logo" class="logo" />
       </div>
       <h1>Recuperar Contraseña</h1>
 
