@@ -311,6 +311,10 @@ body {
 
 .content-area {
   padding: 32px;
+  background-image: url("../img/background/background(9).jpeg");
+  background-size: cover;
+  transition: background 0.5s ease-in-out;
+  height: 100%;
 }
 
 .dashboard-section {
