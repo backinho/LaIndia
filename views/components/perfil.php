@@ -80,7 +80,7 @@
 
         <div class="settings-card">
             <h3 class="card-title" style="margin-bottom: 0px;"><i class="fas fa-key"></i> Ajustes de credenciales</h3>
-            <p id="profile-password" style="margin-bottom: 24px;">usuario@example.com</p>
+            <p id="profile-password" style="margin-bottom: 24px;"></p>
             <form id="credentials-form" class="settings-form">
                 <div class="form-group">
                     <label>Nueva contraseña</label>
@@ -100,6 +100,32 @@
             </form>
             <div class="password-note">
                 <strong>Requisitos:</strong> La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, un número y un carácter especial.
+            </div>
+        </div>
+
+        <div class="settings-card">
+            <h3 class="card-title" style="margin-bottom: 0px;"><i class="fas fa-user-edit"></i> Preguntas de Seguridad</h3>
+            <p id="profile-security" style="margin-bottom: 24px;"></p>
+            <form id="security-questions-form" class="settings-form">
+                <div class="form-group">
+                    <label>Pregunta de seguridad</label>
+                    <select id="security-question-1" class="form-input" required>
+                        <option value="">Selecciona una pregunta</option>
+                        <option value="mascota">¿Cuál es el nombre de tu primera mascota?</option>
+                        <option value="maestra">¿Cuál es el nombre de tu maestra de primaria?</option>
+                        <option value="ciudad">¿En qué ciudad naciste?</option>
+                        <option value="pelicula">¿Cuál es tu película favorita?</option>
+                        <option value="deporte">¿Cuál es tu deporte favorito?</option>
+                        <option value="libro">¿Cuál es tu libro favorito?</option>
+                    </select>
+                    <input type="text" id="security-answer-1" class="form-input" placeholder="Respuesta a la pregunta 1" required />
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-shield-alt"></i> Guardar Pregunta
+                </button>
+            </form>
+            <div class="password-note">
+                <strong>Importante:</strong> Las preguntas de seguridad se utilizan para verificar tu identidad en caso de que olvides tu contraseña. Elige preguntas y respuestas que solo tú conozcas.
             </div>
         </div>
     </div>

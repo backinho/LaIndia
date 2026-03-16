@@ -72,6 +72,37 @@
       </form>
     </div>
 
+    <div class="modal" id="selection-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Selecciona una método de recuperación</h3>
+          <button class="modal-close" id="selection-close">&times;</button>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px;">
+          <p>¿Cómo prefieres recuperar tu contraseña?</p>
+          <button class="btn btn-primary" id="question-recovery-btn">Recuperar por pregunta de seguridad</button>
+          <button class="btn btn-primary" id="pattern-recovery-btn">Recuperar por patrón de seguridad</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="question-modal">
+      <div class="modal-content" style="padding: 20px;">
+        <div class="modal-header">
+          <h3>Pregunta de Seguridad</h3>
+          <button class="modal-close" id="question-close">&times;</button>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; margin-top: 20px; gap: 20px;">
+          <p id="security-question">Escriba su respuesta de seguridad</p>
+          <div class="input-group">
+            <label for="security-answer">Respuesta</label>
+            <input type="password" id="security-answer" required />
+          </div>
+          <button class="btn btn-primary" id="verify-question-btn">Verificar Respuesta</button>
+        </div>
+      </div>
+    </div>
+
     <div class="modal" id="pattern-modal">
       <div class="modal-content" style="padding: 20px;">
         <div class="modal-header">

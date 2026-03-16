@@ -112,17 +112,35 @@ async function handleRecovery(event) {
 
 function handlePattern(event) {
   event.preventDefault();
-  const modal = document.getElementById("pattern-modal");
-  const modalClose = document.getElementById("pattern-close");
+  const modal = document.getElementById("selection-modal");
+  const patternModal = document.getElementById("pattern-modal");
+  const questionModal = document.getElementById("question-modal");
+  const questionCloseBtn = document.getElementById("question-close");
+  const questionVerifyBtn = document.getElementById("verify-question-btn");
+  const selectionCloseBtn = document.getElementById("selection-close");
+  const patternCloseBtn = document.getElementById("pattern-close");
   const patternClearBtn = document.getElementById("clear-pattern-btn");
   const patternVerifyBtn = document.getElementById("verify-pattern-btn");
+
+  const questionBtn = document.getElementById("question-recovery-btn");
+  const patternBtn = document.getElementById("pattern-recovery-btn");
 
   if (!modal) return;
 
   modal.classList.add("show");
 
-  modalClose.addEventListener("click", () => {
+  selectionCloseBtn.addEventListener("click", () => {
     modal.classList.remove("show");
+  });
+
+  questionCloseBtn.addEventListener("click", () => {
+    questionModal.classList.remove("show");
+    modal.classList.add("show");
+  });
+
+  patternCloseBtn.addEventListener("click", () => {
+    patternModal.classList.remove("show");
+    modal.classList.add("show");
   });
 
   if (modal) {
@@ -133,8 +151,57 @@ function handlePattern(event) {
     });
   }
 
+  questionBtn.addEventListener("click", () => {
+    modal.classList.remove("show");
+    questionModal.classList.add("show");
+  });
+
+  patternBtn.addEventListener("click", () => {
+    modal.classList.remove("show");
+    patternModal.classList.add("show");
+  });
+
   if (patternClearBtn) {
     patternClearBtn.addEventListener("click", () => clearPattern());
+  }
+
+  if (questionVerifyBtn) {
+    questionVerifyBtn.onclick = async (e) => {
+      e.preventDefault();
+      const questionEmail = document.getElementById("recovery-email").value;
+      const securityAnswer = document.getElementById("security-answer").value;
+
+      console.log("Email:", questionEmail);
+      console.log("Respuesta:", securityAnswer);
+
+      const data = new FormData();
+
+      window.myAppTempVars.tempData = { email: questionEmail };
+
+      data.append("questionEmail", questionEmail);
+      data.append("securityAnswer", securityAnswer);
+
+      const response = await fetch("question-recovery", {
+        method: "POST",
+        body: data,
+      });
+
+      const result = await response.json();
+
+      if (result.status === true) {
+        showNotification("Usuario confirmado, continuando...", "success");
+        questionModal.classList.remove("show");
+        setTimeout(() => {
+          showRecoveryStep(2);
+        }, 1500);
+      } else {
+        showNotification(result.message, "error");
+        document.getElementById("security-answer").value = "";
+        questionModal.classList.remove("show");
+        delete window.myAppTempVars.tempData;
+      }
+
+    };
   }
 
   if (patternVerifyBtn) {
@@ -166,12 +233,13 @@ function handlePattern(event) {
       } else {
         showNotification(result.message, "error");
         clearPattern();
-        modal.classList.remove("show");
+        patternModal.classList.remove("show");
         delete window.myAppTempVars.tempData;
       }
     };
   }
 }
+
 
 async function init() {
   initTheme();

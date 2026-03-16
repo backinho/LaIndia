@@ -88,6 +88,30 @@ class HomeController
         }
     }
 
+    public function questionRecovery()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Método no permitido');
+            }
+
+            $email = $_POST['questionEmail'];
+            $answer = $_POST['securityAnswer'];
+
+            $response = $this->model->listarUsuarios($email);
+
+            if (password_verify($answer, $response['security_answer'])) {
+                echo json_encode(['status' => true, 'message' => 'Credenciales comprobadas']);
+                return;
+            }
+
+            echo json_encode(['status' => false, 'message' => 'Error de credenciales']);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['status' => false, 'message' => 'Error al confirmar respuesta']);
+        }
+    }
+
     public function resetPassword()
     {
         try {

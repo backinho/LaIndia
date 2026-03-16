@@ -22,7 +22,7 @@ class UsuarioModel
 
     public function listarUsuarioActivo($id)
     {
-        $stmt = $this->db->prepare("SELECT nombre, email, telefono, created_at, updated_at, last_password_change, last_token_recovery FROM usuarios WHERE id = :id");
+        $stmt = $this->db->prepare("SELECT nombre, email, telefono, created_at, updated_at, last_password_change, last_token_recovery, security_updated_at FROM usuarios WHERE id = :id");
         $stmt->bindParam(':id', $id);
         $stmt->execute();
         $response = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -84,6 +84,17 @@ class UsuarioModel
         $stmt = $this->db->prepare("UPDATE usuarios SET password = :password, last_password_change = NOW() WHERE id = :id");
         $stmt->bindParam(':id', $id);
         $stmt->bindParam(':password', $nuevaPasswordHash);
+        return $stmt->execute();
+    }
+
+    public function actualizarPreguntasSeguridad($id, $securityQuestion, $securityAnswer)
+    {
+        $securityAnswerHash = password_hash($securityAnswer, PASSWORD_DEFAULT);
+
+        $stmt = $this->db->prepare("UPDATE usuarios SET security_question = :question, security_answer = :answer, security_updated_at = NOW() WHERE id = :id");
+        $stmt->bindParam(':id', $id);
+        $stmt->bindParam(':question', $securityQuestion);
+        $stmt->bindParam(':answer', $securityAnswerHash);
         return $stmt->execute();
     }
 

@@ -166,6 +166,38 @@ class UsuarioController
         }
     }
 
+    public function actualizarPreguntasSeguridad()
+    {
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                http_response_code(405);
+                echo json_encode(['status' => 'error', 'message' => 'Método no permitido']);
+                return;
+            }
+            
+            $id = $_SESSION['usuario']['id'];
+            $securityQuestion = $_POST['security-question-1'] ?? '';
+            $securityAnswer = $_POST['security-answer-1'] ?? '';
+
+            if (empty($securityQuestion) || empty($securityAnswer)) {
+                echo json_encode(['status' => 'error', 'message' => 'La pregunta y respuesta de seguridad no pueden estar vacías']);
+                return;
+            }
+
+            $response = $this->model->actualizarPreguntasSeguridad($id, $securityQuestion, $securityAnswer);
+
+            if ($response === false) {
+                echo json_encode(['status' => 'error', 'message' => 'No se pudieron actualizar las preguntas de seguridad']);
+                return;
+            }
+
+            echo json_encode(['status' => 'success', 'message' => 'Preguntas de seguridad actualizadas exitosamente.']);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Error interno del servidor']);
+        }
+    }
+
     public function actualizarPatron()
     {
         try {

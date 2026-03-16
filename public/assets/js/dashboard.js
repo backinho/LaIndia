@@ -2897,6 +2897,7 @@ class InventarioApp {
   inicializarPerfil() {
     const profileForm = document.getElementById("profile-form");
     const credencialsForm = document.getElementById("credentials-form");
+    const questionForm = document.getElementById("security-questions-form");
     const patternClearBtn = document.getElementById("clear-pattern-btn");
     const patternVerifyBtn = document.getElementById("verify-pattern-btn");
 
@@ -2922,6 +2923,13 @@ class InventarioApp {
       credencialsForm.onsubmit = (e) => {
         e.preventDefault();
         this.inicializarConfirmacionCrendenciales();
+      };
+    }
+
+    if (questionForm) {
+      questionForm.onsubmit = (e) => {
+        e.preventDefault();
+        this.guardarPreguntasSeguridad();
       };
     }
 
@@ -3039,6 +3047,7 @@ class InventarioApp {
     const profileUpdate = document.getElementById("update-fecha");
     const patternUpdate = document.getElementById("profile-pattern");
     const passwordUpdate = document.getElementById("profile-password");
+    const questionUpdate = document.getElementById("profile-security");
 
     if (profileAvatar) {
       profileAvatar.textContent = this.usuarioActual.nombre.charAt(0).toUpperCase();
@@ -3076,6 +3085,14 @@ class InventarioApp {
     if (passwordUpdate) {
       passwordUpdate.textContent = this.usuarioActual.last_password_change
         ? "Ultimo cambio de contraseña: " + this.usuarioActual.last_password_change
+        : "No se han realizado cambios";
+    }
+
+    console.log(this.usuarioActual);
+
+    if (questionUpdate) {
+      questionUpdate.textContent = this.usuarioActual.security_updated_at
+        ? "Ultimo cambio de preguntas de seguridad: " + this.usuarioActual.security_updated_at
         : "No se han realizado cambios";
     }
 
@@ -3224,6 +3241,81 @@ class InventarioApp {
           nuevaPassword.value = "";
           confirmarPassword.value = "";
           actualPassword.value = "";
+          this.cargarDatosCompletos().then(() => {
+            this.inicializarPerfil();
+          });
+        } else {
+          this.mostrarNotificacion(result.message, "error");
+        }
+
+        modal.classList.remove("show");
+      };
+    }
+  }
+
+  guardarPreguntasSeguridad() {
+    const modal = document.getElementById("confirmacion-modal");
+    if (!modal) return;
+
+    modal.classList.add("show");
+
+    const modalClose = document.getElementById("confirmacion-close");
+    const modalCancel = document.getElementById("confirmacion-cancel");
+    const modalVerify = document.getElementById("confirmacion-confirm");
+
+    modalClose.onclick = () => {
+      modal.classList.remove("show");
+    };
+
+    modalCancel.onclick = () => {
+      modal.classList.remove("show");
+    };
+
+    if (modal) {
+      modal.onclick = (e) => {
+        if (e.target === modal) {
+          modal.classList.remove("show");
+        }
+      };
+    }
+
+    if (modalVerify) {
+      modalVerify.onclick = async () => {
+        const securityQuestion = document.getElementById("security-question-1");
+        const securityAnswer = document.getElementById("security-answer-1");
+
+        const validaciones = [
+          this.validarCampoVacio(securityQuestion.value, 'pregunta de seguridad'),
+          this.validarCampoVacio(securityAnswer.value, 'respuesta de seguridad')
+        ];
+
+        for (let validacion of validaciones) {
+          if (!validacion.valid) {
+            this.mostrarNotificacion(validacion.mensaje, "error");
+            return;
+          }
+        }
+
+        const data = new FormData();
+        data.append("security-question-1", securityQuestion.value);
+        data.append("security-answer-1", securityAnswer.value);
+
+        const response = await fetch("perfil/actualizarPreguntasSeguridad", {
+          method: "POST",
+          body: data,
+        });
+
+        if (!response.ok) {
+          console.error("Error al actualizar las preguntas de seguridad");
+          return;
+        }
+
+        const result = await response.json();
+
+        if (result.status === "success") {
+          this.mostrarNotificacion("Pregunta de seguridad actualizadas correctamente", "success");
+          securityQuestion.value = "";
+          securityAnswer.value = "";
           this.cargarDatosCompletos().then(() => {
             this.inicializarPerfil();
           });
