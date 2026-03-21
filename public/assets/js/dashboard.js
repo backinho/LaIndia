@@ -294,59 +294,20 @@ class InventarioApp {
         }
 
         if (sectionId === "resumen") {
-          this.renderizarResumen();
-          const contenedor = document.querySelector(".content-area");
-          contenedor.style.backgroundImage = "url('public/assets/img/background/background(9).jpeg')";
-      
+          this.renderizarResumen();  
         }
 
         if (sectionId === "inventario") {
           this.renderizarInventarioCompleto();
-          const contenedor = document.querySelector(".content-area");
-          contenedor.style.backgroundImage = "url('public/assets/img/background/background(6).jpeg')";
-        }
-
-        if (sectionId === "categorias") {
-          const contenedor = document.querySelector(".content-area");
-          contenedor.style.backgroundImage = "url('public/assets/img/background/background(7).jpeg')";
-        }
-
-        if (sectionId === "entrada") {
-          const contenedor = document.querySelector(".content-area");
-          contenedor.style.backgroundImage = "url('public/assets/img/background/background(8).jpeg')";
         }
 
         if (sectionId === "salida") {
           this.actualizarSelectProductos();
           this.actualizarSelectClientes();
-          const contenedor = document.querySelector(".content-area");
-          contenedor.style.backgroundImage = "url('public/assets/img/background/background(5).jpeg')";
-        }
-
-        if (sectionId === "historial") {
-          const contenedor = document.querySelector(".content-area");
-          contenedor.style.backgroundImage = "url('public/assets/img/background/background(1).jpeg')";
-        }
-
-        if (sectionId === "proveedores") {
-          const contenedor = document.querySelector(".content-area");
-          contenedor.style.backgroundImage = "url('public/assets/img/background/background(3).jpeg')";
-        }
-
-        if (sectionId === "clientes") {
-          const contenedor = document.querySelector(".content-area");
-          contenedor.style.backgroundImage = "url('public/assets/img/background/background(2).jpeg')";
-        }
-
-        if (sectionId === "usuarios") {
-          const contenedor = document.querySelector(".content-area");
-          contenedor.style.backgroundImage = "url('public/assets/img/background/background(10).jpeg')";
         }
 
         if (sectionId === "perfil") {
           this.cargarDatosPerfil();
-          const contenedor = document.querySelector(".content-area");
-          contenedor.style.backgroundImage = "url('public/assets/img/background/background(4).jpeg')";
         }
 
         if (window.innerWidth <= 1024) {
