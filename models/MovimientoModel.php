@@ -14,7 +14,7 @@ class MovimientoModel
 
     public function listarMovimientos()
     {
-        $stmt = $this->db->prepare("SELECT m.*, u.nombre as nombre_usuario, c.nombre as nombre_cliente, p.nombre as nombre_proveedor FROM `movimientos` m LEFT JOIN `usuarios` u ON u.id = m.usuario_id LEFT JOIN `clientes` c ON c.id = m.cliente_id LEFT JOIN `proveedores` p ON p.id = m.proveedor_id WHERE 1");
+        $stmt = $this->db->prepare("SELECT m.*, u.nombre as nombre_usuario, c.nombre as nombre_cliente, p.nombre as nombre_proveedor FROM `movimientos` m LEFT JOIN `usuarios` u ON u.id = m.usuario_id LEFT JOIN `clientes` c ON c.id = m.cliente_id LEFT JOIN `proveedores` p ON p.id = m.proveedor_id ORDER BY m.created_at DESC");
         $stmt->execute();
         $response = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return $response;
@@ -33,7 +33,7 @@ class MovimientoModel
         LEFT JOIN `usuarios` u ON u.id = m.usuario_id
         LEFT JOIN `clientes` c ON c.id = m.cliente_id
         LEFT JOIN `proveedores` p ON p.id = m.proveedor_id
-        ORDER BY m.fecha DESC
+        ORDER BY m.id DESC
     ");
         $stmtMovimientos->execute();
         $movimientos = $stmtMovimientos->fetchAll(PDO::FETCH_ASSOC);

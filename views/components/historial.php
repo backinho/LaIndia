@@ -12,6 +12,9 @@
             <button class="filter-btn active" data-filter="todos">Todos</button>
             <button class="filter-btn" data-filter="entrada">Entradas</button>
             <button class="filter-btn" data-filter="salida">Salidas</button>
+            <button class="filter-btn" data-filter="dia">Dia</button>
+            <button class="filter-btn" data-filter="mes">Mes</button>
+            <button class="filter-btn" data-filter="año">Año</button>
         </div>
     </div>
     <div class="table-container">

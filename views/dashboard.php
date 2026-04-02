@@ -7,9 +7,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FORTEXTIL</title>
   <link rel="stylesheet" href="/LaIndia/public/assets/css/dashboard.css" />
-  <meta property="og:image" content="https://bolt.new/static/og_default.png">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:image" content="https://bolt.new/static/og_default.png">
 </head>
 
 <body>
@@ -23,6 +20,7 @@
         </button>
       </div>
 
+<?php if ($_SESSION['usuario']['rol'] === 'admin'): ?>
       <nav class="sidebar-nav">
         <a href="#" class="nav-item active" data-section="resumen">
           <span class="nav-icon">📊</span>
@@ -66,7 +64,44 @@
         </a>
       </nav>
     </aside>
-
+<?php endif; ?>
+<?php if ($_SESSION['usuario']['rol'] === 'usuario'): ?>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="resumen">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">Resumen</span>
+        </a>
+        <a href="#" class="nav-item" data-section="inventario">
+          <span class="nav-icon">📦</span>
+          <span class="nav-text">Inventario de Productos</span>
+        </a>
+        <a href="#" class="nav-item" data-section="categorias">
+          <span class="nav-icon">🏷️</span>
+          <span class="nav-text">Gestión de Categorías</span>
+        </a>
+        <a href="#" class="nav-item" data-section="entrada">
+          <span class="nav-icon">📥</span>
+          <span class="nav-text">Entrada de Productos</span>
+        </a>
+        <a href="#" class="nav-item" data-section="salida">
+          <span class="nav-icon">📤</span>
+          <span class="nav-text">Salida de Productos</span>
+        </a>
+        <a href="#" class="nav-item" data-section="historial">
+          <span class="nav-icon">📋</span>
+          <span class="nav-text">Historial de Movimientos</span>
+        </a>
+        <a href="#" class="nav-item" data-section="clientes">
+          <span class="nav-icon">👨‍💼</span>
+          <span class="nav-text">Manejo de Clientes</span>
+        </a>
+        <a href="#" class="nav-item" data-section="perfil">
+          <span class="nav-icon">👤</span>
+          <span class="nav-text">Mi Perfil</span>
+        </a>
+      </nav>
+    </aside>
+<?php endif; ?>
     <main class="main-content">
       <header class="top-header">
         <div class="header-left">
@@ -166,10 +201,15 @@
             <option value="admin">Administrador</option>
           </select>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="password-group">
           <label>Contraseña</label>
           <input type="password" name="user-password" id="user-password" class="form-input" required />
         </div>
+        <div class="form-group" id="confirm-password-group">
+          <label>Confirmar Contraseña</label>
+          <input type="password" name="user-confirm-password" id="user-confirm-password" class="form-input" required />
+        </div>
+
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" id="modal-cancel">Cancelar</button>
           <button type="submit" class="btn btn-primary">Guardar</button>

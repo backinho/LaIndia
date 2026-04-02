@@ -14,7 +14,7 @@ class CategoriaModel
 
     public function listarCategorias()
     {
-        $stmt = $this->db->prepare("SELECT *, (SELECT COUNT(*) FROM productos WHERE productos.categoria_id = categorias.id) AS cantidad_productos FROM categorias WHERE activo = 1");
+        $stmt = $this->db->prepare("SELECT *, (SELECT COUNT(*) FROM productos WHERE productos.categoria_id = categorias.id) AS cantidad_productos FROM categorias WHERE activo = 1 ORDER BY created_at DESC");
         $stmt->execute();
         $response = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return $response;

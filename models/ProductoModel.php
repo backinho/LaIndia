@@ -14,7 +14,7 @@ class ProductoModel
 
     public function listarProductos()
     {
-        $stmt = $this->db->prepare("SELECT p.*, c.nombre AS categoria_nombre FROM productos p LEFT JOIN categorias c ON p.categoria_id = c.id");
+        $stmt = $this->db->prepare("SELECT p.*, c.nombre AS categoria_nombre FROM productos p LEFT JOIN categorias c ON p.categoria_id = c.id ORDER BY p.created_at DESC");
         $stmt->execute();
         $response = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return $response;

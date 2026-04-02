@@ -14,7 +14,7 @@ class UsuarioModel
 
     public function listarUsuarios()
     {
-        $stmt = $this->db->prepare("SELECT * FROM usuarios WHERE activo = 1");
+        $stmt = $this->db->prepare("SELECT * FROM usuarios WHERE activo = 1 ORDER BY created_at DESC");
         $stmt->execute();
         $response = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return $response;
@@ -22,7 +22,7 @@ class UsuarioModel
 
     public function listarUsuarioActivo($id)
     {
-        $stmt = $this->db->prepare("SELECT nombre, email, telefono, created_at, updated_at, last_password_change, last_token_recovery, security_updated_at FROM usuarios WHERE id = :id");
+        $stmt = $this->db->prepare("SELECT id, nombre, email, telefono, created_at, updated_at, last_password_change, last_token_recovery, security_updated_at FROM usuarios WHERE id = :id");
         $stmt->bindParam(':id', $id);
         $stmt->execute();
         $response = $stmt->fetch(PDO::FETCH_ASSOC);

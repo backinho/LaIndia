@@ -14,7 +14,7 @@ class ClienteModel
 
     public function listarClientes()
     {
-        $stmt = $this->db->prepare("SELECT * FROM clientes WHERE activo = 1");
+        $stmt = $this->db->prepare("SELECT * FROM clientes WHERE activo = 1 ORDER BY created_at DESC");
         $stmt->execute();
         $response = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return $response;

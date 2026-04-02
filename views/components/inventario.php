@@ -25,6 +25,7 @@
                     <th>Código</th>
                     <th>Producto</th>
                     <th>Categoría</th>
+                    <th>Estado</th>
                     <th>Stock</th>
                     <th>Precio</th>
                     <th>Valor Total</th>

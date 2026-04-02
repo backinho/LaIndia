@@ -569,6 +569,19 @@ class InventarioApp {
     this.inicializarBusquedaInventario();
   }
 
+  estadoProducto(stock) {
+    if (stock === 0) {
+      return { texto: "Sin stock", clase: "error" };
+    }
+    if (stock < 5) {
+      return { texto: "Crítico", clase: "warning" };
+    }
+    if (stock < 10) {
+      return { texto: "Bajo", clase: "info" };
+    }
+    return { texto: "Disponible", clase: "success" };
+  }
+
   renderizarInventarioCompleto(filtro = "", categoria = "todos") {
     const tbody = document.getElementById("inventario-full-table");
     if (!tbody) return;
@@ -605,6 +618,7 @@ class InventarioApp {
           <td>${producto.codigo}</td>
           <td>${producto.nombre}</td>
           <td>${producto.categoria_nombre}</td>
+          <td><span class="status-badge ${this.estadoProducto(producto.stock).clase}">${this.estadoProducto(producto.stock).texto}</span></td>
           <td>${producto.stock}</td>
           <td>$${parseFloat(producto.precio).toFixed(2)}</td>
           <td>$${valorTotal}</td>
@@ -923,7 +937,7 @@ class InventarioApp {
           </div>
           <div class="form-group">
             <label>Código *</label>
-            <input type="text" class="form-input producto-codigo" required />
+            <input type="text" class="form-input producto-codigo" required readonly/>
           </div>
         </div>
         <div class="form-row">
@@ -964,7 +978,9 @@ class InventarioApp {
       let productosOptions = "";
       if (this.productos && Array.isArray(this.productos)) {
         this.productos.forEach((producto) => {
-          productosOptions += `<option value="${producto.id}">${producto.nombre} - Stock: ${producto.stock}</option>`;
+          if (producto.stock > 0) {
+            productosOptions += `<option value="${producto.id}">${producto.nombre} - Stock: ${producto.stock}</option>`;
+          }
         });
       }
 
@@ -1058,6 +1074,15 @@ class InventarioApp {
         this.mostrarBotonesEliminarEntrada();
       };
     }
+
+    document.querySelector(".producto-categoria")?.addEventListener("change", (e) => {
+      const categoriaId = e.target.value;
+      const categoria = this.categorias.find((c) => c.id === categoriaId);
+      const categoriaInput = newItem.querySelector(".producto-codigo");
+      if (categoria && categoriaInput) {
+        categoriaInput.value = categoria.codigo;
+      }
+    });
 
     this.actualizarNumeracionProductos("entrada");
     this.mostrarBotonesEliminarEntrada();
@@ -1158,7 +1183,7 @@ class InventarioApp {
         };
       } else {
         const id = item.querySelector(".entrada-producto").value;
-        const codigo = item.querySelector(".entrada-code").value;
+        //const codigo = item.querySelector(".entrada-code").value;
         const cantidad = item.querySelector(".entrada-cantidad").value;
         const precio = item.querySelector(".entrada-precio").value;
         const proveedor_id = item.querySelector(".entrada-proveedor")?.value || "";
@@ -1183,7 +1208,7 @@ class InventarioApp {
         datosProducto = {
           tipo: "existente",
           id: id,
-          codigo: codigo,
+          //codigo: codigo,
           cantidad: parseInt(cantidad),
           precio: parseFloat(precio),
           proveedor_id: proveedor_id,
@@ -1541,8 +1566,39 @@ class InventarioApp {
 
     let movimientosFiltrados = [...this.movimientos].reverse();
 
-    if (filtroTipo !== "todos") {
+    if (filtroTipo !== "todos" && (filtroTipo === "entrada" || filtroTipo === "salida")) {
       movimientosFiltrados = movimientosFiltrados.filter((m) => m.tipo === filtroTipo);
+    }
+
+    console.log("Movimientos después de filtrar por tipo:", movimientosFiltrados);
+
+    const ahora = new Date();
+ 
+    const hoySoloFecha = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
+
+    if (filtroTipo === "dia") {
+      movimientosFiltrados = movimientosFiltrados.filter((m) => {
+        const f = new Date(m.fecha);
+        const fechaMov = new Date(f.getFullYear(), f.getMonth(), f.getDate()).getTime();
+        return fechaMov === hoySoloFecha;
+      });
+    }
+
+    if (filtroTipo === "mes") {
+      const mesActual = ahora.getMonth();
+      const añoActual = ahora.getFullYear();
+      movimientosFiltrados = movimientosFiltrados.filter((m) => {
+        const f = new Date(m.fecha);
+        return f.getMonth() === mesActual && f.getFullYear() === añoActual;
+      });
+    }
+
+    if (filtroTipo === "año") {
+      const añoActual = ahora.getFullYear();
+      movimientosFiltrados = movimientosFiltrados.filter((m) => {
+        const f = new Date(m.fecha);
+        return f.getFullYear() === añoActual;
+      });
     }
 
     if (filtroBusqueda) {
@@ -2591,6 +2647,9 @@ class InventarioApp {
       )
       : this.usuarios;
 
+    const userId = this.usuarioActual ? this.usuarioActual.id : null;
+    console.log("Usuario actual ID:", userId);
+
     tbody.innerHTML = usuariosFiltrados
       .map(
         (usuario) => `
@@ -2602,7 +2661,7 @@ class InventarioApp {
         <td><span class="status-badge ${usuario.activo ? "activo" : "inactivo"}">${usuario.activo ? "Activo" : "Inactivo"}</span></td>
         <td>
           <button class="action-btn" onclick="app.editarUsuario('${usuario.id}')">Editar</button>
-          <button class="action-btn delete" onclick="app.eliminarUsuario('${usuario.id}')">Eliminar</button>
+          <button class="action-btn delete" onclick="app.eliminarUsuario('${usuario.id}')" ${userId === usuario.id ? "disabled" : ""}>Eliminar</button>
         </td>
       </tr>
     `
@@ -2634,6 +2693,12 @@ class InventarioApp {
         const modalTitle = document.getElementById("modal-title");
         if (modalTitle) modalTitle.textContent = "Añadir Usuario";
         if (modal) modal.classList.add("show");
+        document.getElementById("user-password").required = true;
+        document.getElementById("user-confirm-password").required = true;
+        document.getElementById("user-password").style.display = "block";
+        document.getElementById("user-confirm-password").style.display = "block";
+        document.getElementById("password-group").style.display = "flex";
+        document.getElementById("confirm-password-group").style.display = "flex";
       };
     }
 
@@ -2674,7 +2739,12 @@ class InventarioApp {
     document.getElementById("user-email").value = usuario.email;
     document.getElementById("user-telefono").value = usuario.telefono;
     document.getElementById("user-rol").value = usuario.rol;
-    document.getElementById("user-password").value = usuario.password;
+    document.getElementById("user-password").required = false;
+    document.getElementById("user-confirm-password").required = false;
+    document.getElementById("user-password").style.display = "none";
+    document.getElementById("user-confirm-password").style.display = "none";
+    document.getElementById("password-group").style.display = "none";
+    document.getElementById("confirm-password-group").style.display = "none";
 
     const modalTitle = document.getElementById("modal-title");
     if (modalTitle) modalTitle.textContent = "Editar Usuario";
@@ -2754,18 +2824,49 @@ class InventarioApp {
     const telefono = document.getElementById("user-telefono").value;
     const rol = document.getElementById("user-rol").value;
     const password = document.getElementById("user-password").value;
+    const confirmPassword = document.getElementById("user-confirm-password").value;
 
     const validaciones = [
       this.validarCampoVacio(nombre, 'nombre'),
       this.validarCampoVacio(email, 'email'),
       this.validarCampoVacio(telefono, 'teléfono'),
       this.validarCampoVacio(rol, 'rol'),
-      this.validarCampoVacio(password, 'contraseña')
+      this.validarCampoVacio(password, 'contraseña'),
+      this.validarCampoVacio(confirmPassword, 'confirmar contraseña')
     ];
 
-    for (let validacion of validaciones) {
-      if (!validacion.valid) {
-        this.mostrarNotificacion(validacion.mensaje, "error");
+    const validacionesEditar = [
+      this.validarCampoVacio(nombre, 'nombre'),
+      this.validarCampoVacio(email, 'email'),
+      this.validarCampoVacio(telefono, 'teléfono'),
+      this.validarCampoVacio(rol, 'rol'),
+    ];
+
+    if (!id) {
+      for (let validacion of validaciones) {
+        if (!validacion.valid) {
+          this.mostrarNotificacion(validacion.mensaje, "error");
+          return;
+        }
+      }
+    } else {
+      for (let validacion of validacionesEditar) {
+        if (!validacion.valid) {
+          this.mostrarNotificacion(validacion.mensaje, "error");
+          return;
+        }
+      }
+    }
+
+    if (!id) {
+      const validacionPassword = this.validarPassword(password);
+      if (!validacionPassword.valid) {
+        this.mostrarNotificacion(validacionPassword.mensaje, "error");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        this.mostrarNotificacion("Las contraseñas no coinciden", "error");
         return;
       }
     }
@@ -2780,19 +2881,12 @@ class InventarioApp {
       return;
     }
 
-    const validacionPassword = this.validarPassword(password);
-    if (!validacionPassword.valid) {
-      this.mostrarNotificacion(validacionPassword.mensaje, "error");
-      return;
-    }
-
     if (!id) {
       const data = new FormData();
       data.append("user-nombre", nombre);
       data.append("user-email", email);
       data.append("user-telefono", telefono);
       data.append("user-rol", rol);
-      data.append("user-password", password);
 
       const response = await fetch("usuarios/guardar", {
         method: "POST",
@@ -2819,7 +2913,6 @@ class InventarioApp {
       data.append("user-email", email);
       data.append("user-telefono", telefono);
       data.append("user-rol", rol);
-      data.append("user-password", password);
 
       const response = await fetch("usuarios/actualizar", {
         method: "POST",
