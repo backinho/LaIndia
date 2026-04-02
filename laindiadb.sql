@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 16-03-2026 a las 01:49:51
+-- Tiempo de generación: 02-04-2026 a las 19:24:32
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -70,6 +70,7 @@ CREATE TABLE `clientes` (
 --
 
 INSERT INTO `clientes` (`id`, `nombre`, `email`, `telefono`, `direccion`, `notas`, `activo`, `fecha_registro`, `created_at`, `updated_at`, `created_by`, `updated_by`, `deleted_at`, `deleted_by`) VALUES
+('4a73b431-2eaa-11f1-9e5f-f44d30ee4ee3', 'prueba', 'prueba@gmail.com', '1231424123', 'fasfas', '', 1, '2026-04-02 15:40:35', '2026-04-02 15:40:35', '2026-04-02 15:40:35', NULL, NULL, NULL, NULL),
 ('5fb3779a-e9d2-11f0-8264-f44d30ee4ee3', 'example', 'example@example.com', '123123', 'Virgen del Valle', 'Actualizado mi helmano', 0, '2026-01-05 01:03:40', '2026-01-05 01:03:40', '2026-01-05 13:31:22', NULL, NULL, '2026-01-05 13:31:22', NULL),
 ('cli-001', 'Cliente General', 'cliente@general.com', '555-5678', 'Avenida Central #456, Ciudad', NULL, 1, '2025-12-28 17:20:14', '2025-12-28 17:20:14', '2025-12-28 17:20:14', NULL, NULL, NULL, NULL);
 
@@ -211,6 +212,32 @@ CREATE TABLE `productos` (
 --
 -- Disparadores `productos`
 --
+DELIMITER $$
+CREATE TRIGGER `before_producto_insert_generate_code` BEFORE INSERT ON `productos` FOR EACH ROW BEGIN
+    DECLARE prefix VARCHAR(100);
+    DECLARE next_id INT;
+    DECLARE new_code VARCHAR(100);
+
+    -- 1. Obtener el código (prefijo) de la categoría seleccionada
+    SELECT codigo INTO prefix 
+    FROM categorias 
+    WHERE id = NEW.categoria_id;
+
+    -- 2. Contar cuántos productos existen ya con ese prefijo para determinar el siguiente número
+    -- Usamos LIKE para buscar patrones similares (ej: PRU-1, PRU-2)
+    SELECT COUNT(*) + 1 INTO next_id 
+    FROM productos 
+    WHERE categoria_id = NEW.categoria_id;
+
+    -- 3. Construir el nuevo código (Ejemplo: PRU-001)
+    -- LPAD añade ceros a la izquierda para mantener un formato limpio
+    SET new_code = CONCAT(prefix, '-', LPAD(next_id, 3, '0'));
+
+    -- 4. Asignar el código generado al nuevo producto
+    SET NEW.codigo = new_code;
+END
+$$
+DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `log_price_change` AFTER UPDATE ON `productos` FOR EACH ROW BEGIN
     IF OLD.precio != NEW.precio THEN
