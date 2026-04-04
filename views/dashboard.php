@@ -28,11 +28,11 @@
         </a>
         <a href="#" class="nav-item" data-section="inventario">
           <span class="nav-icon">📦</span>
-          <span class="nav-text">Inventario de Productos</span>
+          <span class="nav-text">Inventario</span>
         </a>
         <a href="#" class="nav-item" data-section="categorias">
           <span class="nav-icon">🏷️</span>
-          <span class="nav-text">Gestión de Categorías</span>
+          <span class="nav-text">Categorías</span>
         </a>
         <a href="#" class="nav-item" data-section="entrada">
           <span class="nav-icon">📥</span>
@@ -48,15 +48,15 @@
         </a>
         <a href="#" class="nav-item" data-section="proveedores">
           <span class="nav-icon">🏭</span>
-          <span class="nav-text">Gestión de Proveedores</span>
+          <span class="nav-text">Proveedores</span>
         </a>
         <a href="#" class="nav-item" data-section="clientes">
           <span class="nav-icon">👨‍💼</span>
-          <span class="nav-text">Manejo de Clientes</span>
+          <span class="nav-text">Clientes</span>
         </a>
         <a href="#" class="nav-item" data-section="usuarios">
           <span class="nav-icon">👥</span>
-          <span class="nav-text">Manejo de Usuarios</span>
+          <span class="nav-text">Usuarios</span>
         </a>
         <a href="#" class="nav-item" data-section="perfil">
           <span class="nav-icon">👤</span>
@@ -73,11 +73,11 @@
         </a>
         <a href="#" class="nav-item" data-section="inventario">
           <span class="nav-icon">📦</span>
-          <span class="nav-text">Inventario de Productos</span>
+          <span class="nav-text">Inventario</span>
         </a>
         <a href="#" class="nav-item" data-section="categorias">
           <span class="nav-icon">🏷️</span>
-          <span class="nav-text">Gestión de Categorías</span>
+          <span class="nav-text">Categorías</span>
         </a>
         <a href="#" class="nav-item" data-section="entrada">
           <span class="nav-icon">📥</span>
@@ -93,7 +93,7 @@
         </a>
         <a href="#" class="nav-item" data-section="clientes">
           <span class="nav-icon">👨‍💼</span>
-          <span class="nav-text">Manejo de Clientes</span>
+          <span class="nav-text">Clientes</span>
         </a>
         <a href="#" class="nav-item" data-section="perfil">
           <span class="nav-icon">👤</span>

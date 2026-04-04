@@ -226,7 +226,7 @@ function handlePattern(event) {
 
       if (result.status === true) {
         showNotification("Usuario confirmado, continuando...", "success");
-        modal.classList.remove("show");
+        patternModal.classList.remove("show");
         setTimeout(() => {
           showRecoveryStep(2);
         }, 1500);
