@@ -2887,6 +2887,7 @@ class InventarioApp {
       data.append("user-email", email);
       data.append("user-telefono", telefono);
       data.append("user-rol", rol);
+      data.append("user-password", password);
 
       const response = await fetch("usuarios/guardar", {
         method: "POST",
