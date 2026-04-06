@@ -1183,7 +1183,7 @@ class InventarioApp {
         };
       } else {
         const id = item.querySelector(".entrada-producto").value;
-        //const codigo = item.querySelector(".entrada-code").value;
+        const codigo = item.querySelector(".entrada-code").value;
         const cantidad = item.querySelector(".entrada-cantidad").value;
         const precio = item.querySelector(".entrada-precio").value;
         const proveedor_id = item.querySelector(".entrada-proveedor")?.value || "";
@@ -1208,7 +1208,7 @@ class InventarioApp {
         datosProducto = {
           tipo: "existente",
           id: id,
-          //codigo: codigo,
+          codigo: codigo,
           cantidad: parseInt(cantidad),
           precio: parseFloat(precio),
           proveedor_id: proveedor_id,

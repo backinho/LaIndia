@@ -33,7 +33,7 @@ class MovimientoModel
         LEFT JOIN `usuarios` u ON u.id = m.usuario_id
         LEFT JOIN `clientes` c ON c.id = m.cliente_id
         LEFT JOIN `proveedores` p ON p.id = m.proveedor_id
-        ORDER BY m.id DESC
+        ORDER BY m.created_at DESC
     ");
         $stmtMovimientos->execute();
         $movimientos = $stmtMovimientos->fetchAll(PDO::FETCH_ASSOC);
@@ -235,11 +235,19 @@ class MovimientoModel
             $producto_id = $producto['nuevo_id'];
         }
 
-        $codigo = $producto['codigo'];
+        $codigo = isset($producto['codigo']) ? $producto['codigo'] : null;
         $cantidad = $producto['cantidad'];
         $precio = $producto['precio'];
         $motivo = 'entrada';
         $notas = isset($producto['notas']) ? $producto['notas'] : '';
+
+        if (!$codigo && $producto_id) {
+            $stmtCodigo = $this->db->prepare("SELECT codigo FROM productos WHERE id = :id");
+            $stmtCodigo->bindParam(':id', $producto_id);
+            $stmtCodigo->execute();
+            $productoData = $stmtCodigo->fetch(PDO::FETCH_ASSOC);
+            $codigo = $productoData ? $productoData['codigo'] : null;
+        }
 
         $stmt->bindParam(':id', $detalle_id);
         $stmt->bindParam(':movimiento_id', $movimiento_id);
